@@ -10,6 +10,7 @@ using System;
 
 namespace Overseer.Services
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]
     public class UserService
     {
         private readonly DiscordSocketClient _client;
@@ -127,7 +128,7 @@ namespace Overseer.Services
         /// </returns>
         public async Task<bool> CanModify(SocketGuildUser bot, SocketGuildUser user)
         {
-            await Task.CompletedTask; // Keep async status for future proofing
+            await Task.CompletedTask;
             var botAboveUser = bot.Hierarchy > user.Hierarchy;
             var botHasPerms = bot.GuildPermissions.ManageNicknames;
 

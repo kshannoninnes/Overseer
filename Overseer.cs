@@ -8,67 +8,39 @@ using Microsoft.Extensions.DependencyInjection;
 using Overseer.Services;
 using Overseer.Handlers;
 using Overseer.Models;
-using System.Diagnostics;
 
 namespace Overseer
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Main class runs forever")]
     class Overseer
     {
-        static void Main()
-        {
-            int retryDelay = 5;
-            int attempts = 0;
+        static void Main() => new Overseer().MainAsync().GetAwaiter().GetResult();
 
-            while (true)
-            {
-                try
-                {
-                    attempts++;
-                    new Overseer().MainAsync().GetAwaiter().GetResult();
-                }
-                catch(Exception e)
-                {
-                    Console.WriteLine(e.StackTrace);
-
-                    if (attempts >= 5)
-                        break;
-
-                    Thread.Sleep(retryDelay * attempts * 1000);
-                }
-            }
-        }
-
-        private string envToken;
         private DiscordSocketClient _client;
         private CommandService _commands;
         private CommandHandler _handler;
         private IServiceProvider _services;
 
-        private Overseer() { }
+        private static string EnvToken =>
+            #if DEBUG
+                Environment.GetEnvironmentVariable("MareauProdToken");
+            #else
+                return Environment.GetEnvironmentVariable("OverseerToken");
+            #endif
 
         // Discord.NET framework is all asynchronous, so it requires an async main method
         private async Task MainAsync()
         {
-            try
-            {
-                _client = new DiscordSocketClient(new DiscordSocketConfig { AlwaysDownloadUsers = true });
-                _commands = new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false });
-                _services = await ConfigureServices();
-                _handler = new CommandHandler(_services, _commands, _client);
+            _client = new DiscordSocketClient(new DiscordSocketConfig { AlwaysDownloadUsers = true });
+            _commands = new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false });
+            _services = await ConfigureServices();
+            _handler = new CommandHandler(_services, _commands, _client);
 
-                envToken = Environment.GetEnvironmentVariable("OverseerToken");
-                SetEnvToken();
-
-                await _handler.InitializeAsync();
-                await _client.SetGameAsync("for .help", type: ActivityType.Watching);
-                await _client.LoginAsync(TokenType.Bot, envToken);
-                await _client.StartAsync();
-                await Task.Delay(Timeout.Infinite);
-            }
-            catch(Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
+            await _handler.InitializeAsync();
+            await _client.SetGameAsync("for .help", type: ActivityType.Watching);
+            await _client.LoginAsync(TokenType.Bot, EnvToken);
+            await _client.StartAsync();
+            await Task.Delay(Timeout.Infinite);
         }
 
         // Ensure all services have have any dependencies injected before registration
@@ -92,12 +64,6 @@ namespace Overseer
                 .AddSingleton(weebService);
 
             return map.BuildServiceProvider();
-        }
-
-        [Conditional("DEBUG")]
-        private void SetEnvToken()
-        {
-            envToken = Environment.GetEnvironmentVariable("MareauProdToken");
         }
     }
 }

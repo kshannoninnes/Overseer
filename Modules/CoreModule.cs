@@ -9,8 +9,6 @@ namespace Overseer.Modules
     [Name("Core")]
     public class CoreModule : ModuleBase<SocketCommandContext>
     {
-        private const uint EMBED_COLOR = 0x00ff00;
-
         private readonly LoggingService _logger;
         private readonly CommandService _commandService;
 
@@ -28,7 +26,7 @@ namespace Overseer.Modules
             var embedBuilder = new EmbedBuilder
             {
                 Title = "Available Commands",
-                Color = Defaults.Embed.COLOR
+                Color = Defaults.Embed.Color
             };
 
             foreach (var module in modules)
@@ -44,6 +42,7 @@ namespace Overseer.Modules
                 embedBuilder.AddField(moduleName, commandsText);
             }
 
+            await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"\"Help\" command invoked."));
             await ReplyAsync(embed: embedBuilder.Build());
         }
 
@@ -60,13 +59,16 @@ namespace Overseer.Modules
                     {
                         Title = command.Name,
                         Description = command.Summary,
-                        Color = Defaults.Embed.COLOR
+                        Color = Defaults.Embed.Color
                     };
+
+                    await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"\"Help\" command invoked with argument \"{commandName}\""));
                     await ReplyAsync(embed: embedBuilder.Build());
                     return;
                 }
             }
 
+            await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"\"Help\" command failed with argument \"{commandName}\""));
             await ReplyAsync($"Command {commandName} not found");
         }
     }

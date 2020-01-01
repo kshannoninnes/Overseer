@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 
 namespace Overseer.Services
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]
     public class WeebService
     {
         private readonly LoggingService _logger;
@@ -23,7 +24,7 @@ namespace Overseer.Services
             _logger = logger;
         }
 
-        public async Task<Media> GetMedia(string title, ReleaseType type)
+        public async Task<OverseerMedia> GetMedia(string title, ReleaseType type)
         {
             var request = new GraphQLRequest
             {
@@ -33,35 +34,35 @@ namespace Overseer.Services
                     search = title
                 }
             };
-            var graphqlClient = new GraphQLClient("https://graphql.anilist.co");
+            using var graphqlClient = new GraphQLClient("https://graphql.anilist.co");
             var response = await graphqlClient.PostAsync(request);
             await ValidateResponse(response);
 
             var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            return JsonConvert.DeserializeObject<Media>(response.Data.Media.ToString(), settings);
+            return JsonConvert.DeserializeObject<OverseerMedia>(response.Data.Media.ToString(), settings);
         }
 
-        public async Task<Embed> BuildEmbed(Media media, ReleaseType type)
+        public async Task<Embed> BuildEmbed(OverseerMedia media, ReleaseType type)
         {
             // attributes
-            var title = $"**{media.title.romaji}**";
-            var url = media.siteUrl;
-            var desc = await FormatDescription(media.description);
-            var color = Defaults.Embed.COLOR;
-            var thumbnail = media.coverImage.extraLarge;
+            var title = $"**{media.Title.Romaji}**";
+            var url = media.SiteUrl;
+            var desc = await FormatDescription(media.Description);
+            var color = Defaults.Embed.Color;
+            var thumbnail = media.CoverImage.ExtraLarge;
 
             // fields
-            var status = await GetStatus(media.status);
-            var format = await GetFormat(media.format);
+            var status = await GetStatus(media.Status);
+            var format = await GetFormat(media.Format);
             var releaseTypeName = await GetType(type);
-            var releaseNum = await GetNumberOfReleases(media.numReleases);
-            var genres = await GetGenres(media.genres);
-            var tags = await GetTags(media.tags);
+            var releaseNum = await GetNumberOfReleases(media.NumReleases);
+            var genres = await GetGenres(media.Genres);
+            var tags = await GetTags(media.Tags);
 
             var eb = new EmbedBuilder
             {
                 Title = title,
-                Url = url,
+                Url = url.ToString(),
                 Description = desc,
                 Color = color,
                 ThumbnailUrl = thumbnail
@@ -90,7 +91,7 @@ namespace Overseer.Services
 
         private async Task AddEmptyField(EmbedBuilder eb, bool inline)
         {
-            await AddField(eb, "\u200b", "\u200b", true);
+            await AddField(eb, "\u200b", "\u200b", inline);
         }
 
         private async Task<string> CraftQuery(ReleaseType type)
@@ -190,7 +191,7 @@ namespace Overseer.Services
         private async Task<string> GetTags(List<Tag> tagList)
         {
             await Task.CompletedTask;
-            return string.Join(", ", (tagList.Where(t => !t.isMediaSpoiler && t.rank > 50).Select(t => t.name)));
+            return string.Join(", ", (tagList.Where(t => !t.IsMediaSpoiler && t.Rank > 50).Select(t => t.Name)));
         }
 
         private async Task<string> CapitalizeFirstLetter(string text)

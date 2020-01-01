@@ -50,7 +50,7 @@ namespace Overseer.Modules
                     await _logger.Log(new LogMessage(LogSeverity.Info, $"{Context.User.Username}", msg));
                 }
             }
-            catch(Exception e)
+            catch(CommandException e)
             {
                 await ReplyAsync("Error running command \"rename\"");
                 await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"Error running \"rename @{user.Username}\": {e.ToString()}"));
@@ -90,7 +90,7 @@ namespace Overseer.Modules
                 await _logger.Log(new LogMessage(LogSeverity.Info, $"{Context.User.Username}", $"Renamed {totalUsersRenamed} users in {duration} seconds."));
 
             }
-            catch (Exception e)
+            catch (CommandException e)
             {
                 await ReplyAsync("Error running command \"rename all\"");
                 await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"Error running command: {e.ToString()}"));
@@ -128,7 +128,7 @@ namespace Overseer.Modules
                     await _logger.Log(new LogMessage(LogSeverity.Info, $"{Context.User.Username}", msg));
                 }
             }
-            catch (Exception e)
+            catch (CommandException e)
             {
                 await ReplyAsync("Error running command \"revert\"");
                 await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"Error running command: {e.ToString()}"));
@@ -167,7 +167,7 @@ namespace Overseer.Modules
                 var duration = Math.Round(stopwatch.Elapsed.TotalSeconds, 1);
                 await _logger.Log(new LogMessage(LogSeverity.Info, $"{Context.User.Username}", $"Renamed {totalUsersReverted} users in {duration} seconds."));
             }
-            catch (Exception e)
+            catch (CommandException e)
             {
                 await ReplyAsync("Error running command \"revert all\"");
                 await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"Error running command: {e.ToString()}"));

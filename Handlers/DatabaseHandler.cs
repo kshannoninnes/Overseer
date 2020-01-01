@@ -23,14 +23,14 @@ namespace Overseer.Handlers
             await _conn.CreateTableAsync<T>();
         }
 
-        public async Task InsertAsync<T>(T obj)
+        public async Task InsertAsync<T>(T value)
         {
-            await _conn.InsertAsync(obj);
+            await _conn.InsertAsync(value);
         } 
 
-        public async Task UpdateAsync<T>(T obj)
+        public async Task UpdateAsync<T>(T value)
         {
-            await _conn.UpdateAsync(obj);
+            await _conn.UpdateAsync(value);
         }
 
         public async Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate) where T: new()
@@ -39,10 +39,10 @@ namespace Overseer.Handlers
             return obj;
         }
 
-        public async Task RemoveAsync<T>(T obj) where T: new()
+        public async Task RemoveAsync<T>(T value) where T: new()
         {
             var conn = new SQLiteAsyncConnection(_dbPath);
-            await _conn.DeleteAsync(obj);
+            await _conn.DeleteAsync(value);
         }
 
         public async Task<bool> Exists<T>(Expression<Func<T, bool>> predicate) where T: new()

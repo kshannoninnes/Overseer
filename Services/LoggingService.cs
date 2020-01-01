@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -7,25 +8,31 @@ namespace Overseer.Services
 {
     public class LoggingService
     {
-        private readonly string _logDirectory;
+        private const string DateFormat = "yyyy-MM-dd";
 
-        public int SourcePadLength { get; private set; }
+        private readonly string _logDirectory;
+        private readonly int _sourcePadLength;
 
         public LoggingService(string logDirectory, int sourcePadLength)
         {
             _logDirectory = logDirectory;
-            SourcePadLength = sourcePadLength;
+            _sourcePadLength = sourcePadLength;
+
+            Initialize();
         }
 
-        public async Task Log(LogMessage msg)
+        private void Initialize()
         {
             if (!Directory.Exists(_logDirectory))
             {
                 Directory.CreateDirectory(_logDirectory);
             }
+        }
 
-            var filename = $"{_logDirectory}/{DateTime.Now.ToString("yyyy-MM-dd")}.log";
-            var text = msg.ToString(padSource: SourcePadLength);
+        public async Task Log(LogMessage msg)
+        {
+            var filename = $"{_logDirectory}/{DateTime.Now.ToString(DateFormat)}.log";
+            var text = msg.ToString(padSource: _sourcePadLength);
             using var writer = File.AppendText(filename);
 
             writer.WriteLine(text);

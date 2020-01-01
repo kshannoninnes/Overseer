@@ -4,6 +4,6 @@ namespace Overseer.Defaults
 {
     public static class Embed
     {
-        public static Color COLOR = Color.Blue;
+        public static readonly Color Color = Color.Blue;
     }
 }
