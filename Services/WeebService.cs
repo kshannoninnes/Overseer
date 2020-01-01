@@ -4,6 +4,7 @@ using GraphQL.Common.Request;
 using GraphQL.Common.Response;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Overseer.Exceptions;
 using Overseer.Handlers;
 using Overseer.Models;
 using System;
@@ -127,6 +128,7 @@ namespace Overseer.Services
 
         }
 
+        // TODO Improve error handling here
         private async Task ValidateResponse(GraphQLResponse res)
         {
             await Task.CompletedTask;

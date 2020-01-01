@@ -1,5 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
+using Overseer.Exceptions;
 using Overseer.Models;
 using Overseer.Services;
 using System.Threading.Tasks;
@@ -26,18 +27,20 @@ namespace Overseer.Modules
 
         private async Task GetMediaAsync(string title, ReleaseType type)
         {
+            var caller = Context.User.Username;
+
             try
             {
                 var media = await _ws.GetMedia(title, type);
                 var embed = await _ws.BuildEmbed(media, type);
 
-                await _logger.Log(new LogMessage(LogSeverity.Info, Context.User.Username, $"{media.Title.Romaji} retreived from upstream API."));
+                await _logger.LogInfo($"{type.ToString()} \"{media.Title.Romaji}\" retreived from upstream API.");
                 await ReplyAsync(embed: embed);
             }
             catch(UpstreamApiException e)
             {
-                await _logger.Log(new LogMessage(LogSeverity.Error, Context.User.Username, $"Error retrieving \"{title}\": {e.Message}"));
-                await ReplyAsync("Error retreiving info.");
+                await _logger.LogError(caller, nameof(GetMediaAsync), e.Message);
+                await ReplyAsync($"Error retreiving {type.ToString()} info.");
             }
         }
     }

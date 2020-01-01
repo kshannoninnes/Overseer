@@ -17,7 +17,7 @@ namespace Overseer.Services
         private readonly DatabaseHandler _db;
         private readonly LoggingService _logger;
 
-        public UserService(DatabaseHandler db, DiscordSocketClient client, LoggingService logger)
+        public UserService(DiscordSocketClient client, DatabaseHandler db, LoggingService logger)
         {
             _client = client;
             _db = db;
@@ -31,7 +31,7 @@ namespace Overseer.Services
         /// <returns></returns>
         public async Task<bool> IsTrackedAsync(ulong id)
         {
-            var pred = await GetIdPred(id);
+            var pred = await GetIdPredicate(id);
             var isEnforced = await _db.Exists(pred);
 
             return isEnforced;
@@ -52,7 +52,7 @@ namespace Overseer.Services
 
         public async Task RevertUserAsync(IGuildUser user)
         {
-            var pred = await GetIdPred(user.Id);
+            var pred = await GetIdPredicate(user.Id);
             var enforcedUser = await _db.GetAsync(pred);
             await _db.RemoveAsync(enforcedUser);
             await user.ModifyAsync(x => x.Nickname = enforcedUser.Nickname);
@@ -63,7 +63,7 @@ namespace Overseer.Services
             var numUsersRenamed = 0;
             foreach(var user in users)
             {
-                var pred = await GetIdPred(user.Id);
+                var pred = await GetIdPredicate(user.Id);
                 var isEnforced = await _db.Exists(pred);
 
                 var bot = await user.Guild.GetCurrentUserAsync();
@@ -85,7 +85,7 @@ namespace Overseer.Services
             var numUsersReverted = 0;
             foreach (var user in users)
             {
-                var pred = await GetIdPred(user.Id);
+                var pred = await GetIdPredicate(user.Id);
                 var isEnforced = await _db.Exists(pred);
 
                 var bot = await user.Guild.GetCurrentUserAsync();
@@ -162,7 +162,7 @@ namespace Overseer.Services
         {
             if (await IsTrackedAsync(after.Id))
             {
-                var pred = await GetIdPred(after.Id);
+                var pred = await GetIdPredicate(after.Id);
                 var enforcedNickname = (await _db.GetAsync(pred)).EnforcedNickname;
                 var hasEnforcedName = enforcedNickname != null;
 
@@ -174,8 +174,7 @@ namespace Overseer.Services
                 if (hasEnforcedName && canModify && wrongNickname)
                 {
                     await after.ModifyAsync(x => x.Nickname = enforcedNickname);
-                    await _logger.Log(new LogMessage(LogSeverity.Info, "MaintainNickname",
-                        $"User {after.Username} updated nickname, setting nickname to \"{enforcedNickname}\""));
+                    await _logger.LogInfo($"User {after.Username} updated nickname, setting nickname to \"{enforcedNickname}\"");
                 }
             }
         }
@@ -193,15 +192,14 @@ namespace Overseer.Services
         {
             if (await IsTrackedAsync(user.Id))
             {
-                var pred = await GetIdPred(user.Id);
-                var enforcedNickname = (await _db.GetAsync(pred)).EnforcedNickname;
+                var id = await GetIdPredicate(user.Id);
+                var enforcedNickname = (await _db.GetAsync(id)).EnforcedNickname;
                 await user.ModifyAsync(x => x.Nickname = enforcedNickname);
-                await _logger.Log(new LogMessage(LogSeverity.Info, "SetNicknameOnNewUser",
-                    $"New user {user.Username}, setting nickname to \"{enforcedNickname}\""));
+                await _logger.LogInfo($"New user {user.Username}, setting nickname to \"{enforcedNickname}\"");
             }
         }
 
-        private async Task<Expression<Func<EnforcedUser, bool>>> GetIdPred(ulong id)
+        private async Task<Expression<Func<EnforcedUser, bool>>> GetIdPredicate(ulong id)
         {
             await Task.CompletedTask;
             var idStr = id.ToString();

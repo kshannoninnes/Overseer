@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Commands;
 using Overseer.Services;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -42,34 +43,35 @@ namespace Overseer.Modules
                 embedBuilder.AddField(moduleName, commandsText);
             }
 
-            await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"\"Help\" command invoked."));
+            await _logger.LogInfo($"{Context.User.Username} invoked \"help\".");
             await ReplyAsync(embed: embedBuilder.Build());
         }
 
         [Command("help")]
         public async Task HelpAsync(string commandName)
         {
+            var caller = Context.User.Username;
             var commands = _commandService.Commands;
+            var command = new List<CommandInfo>(commands).Find(x => x.Name.Equals(commandName, System.StringComparison.OrdinalIgnoreCase));
 
-            foreach (var command in commands)
+            if (command == null)
             {
-                if(command.Name.Equals(commandName, System.StringComparison.OrdinalIgnoreCase))
-                {
-                    var embedBuilder = new EmbedBuilder
-                    {
-                        Title = command.Name,
-                        Description = command.Summary,
-                        Color = Defaults.Embed.Color
-                    };
-
-                    await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"\"Help\" command invoked with argument \"{commandName}\""));
-                    await ReplyAsync(embed: embedBuilder.Build());
-                    return;
-                }
+                var commandNotFound = $"Command \"{commandName}\" not found.";
+                await _logger.LogError(caller, nameof(HelpAsync), commandNotFound);
+                await ReplyAsync(commandNotFound);
+                return;
             }
 
-            await _logger.Log(new LogMessage(LogSeverity.Error, $"{Context.User.Username}", $"\"Help\" command failed with argument \"{commandName}\""));
-            await ReplyAsync($"Command {commandName} not found");
+            var embedBuilder = new EmbedBuilder
+            {
+                Title = command.Name,
+                Description = command.Summary,
+                Color = Defaults.Embed.Color
+            };
+
+            await _logger.LogInfo($"{Context.User.Username} invoked \"help\" for command \"{commandName}\".");
+            await ReplyAsync(embed: embedBuilder.Build());
+
         }
     }
 }

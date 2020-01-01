@@ -49,11 +49,9 @@ namespace Overseer
             var db = new DatabaseHandler("overseer.db");
             await db.CreateTable<EnforcedUser>();
 
-            var logger = new LoggingService(logDirectory: "Logs", sourcePadLength: 20);
-            _client.Log += logger.Log;
-            _commands.Log += logger.Log;
+            var logger = new LoggingService(_client, _commands, "Logs", sourcePadLength: 20);
 
-            var userService = new UserService(db, _client, logger);
+            var userService = new UserService(_client, db, logger);
             await userService.StartMaintainingAsync();
 
             var weebService = new WeebService(logger);
