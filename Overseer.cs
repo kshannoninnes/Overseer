@@ -23,7 +23,7 @@ namespace Overseer
 
         private static string EnvToken =>
             #if DEBUG
-                Environment.GetEnvironmentVariable("MareauProdToken");
+                Environment.GetEnvironmentVariable("TestToken");
             #else
                 return Environment.GetEnvironmentVariable("OverseerToken");
             #endif
