@@ -7,54 +7,44 @@ using System.Threading.Tasks;
 
 namespace Overseer.Services
 {
-    public class LoggingService
+    public class LoggingService : ILogger
     {
         private const string DateFormat = "yyyy-MM-dd";
-        private const string OverseerSource = "Overseer";
+        private const string LogDirectory = "Logs";
+        private const int SourcePadLength = 15;
 
-        private readonly string _logDirectory;
-        private readonly int _sourcePadLength;
-
-        public LoggingService(DiscordSocketClient client, CommandService commands, string logDirectory, int sourcePadLength)
+        public LoggingService(DiscordSocketClient client, CommandService commands)
         {
-            _logDirectory = logDirectory;
-            _sourcePadLength = sourcePadLength;
             client.Log += Log;
             commands.Log += Log;
 
             Initialize();
         }
 
+        public async Task Log(LogSeverity severity, string message, string method, string caller)
+        {
+            var newMessage = $"{method} -> {message}";
+            await Log(new LogMessage(severity, caller, newMessage));
+        }
+
         private void Initialize()
         {
-            if (!Directory.Exists(_logDirectory))
+            if (!Directory.Exists(LogDirectory))
             {
-                Directory.CreateDirectory(_logDirectory);
+                Directory.CreateDirectory(LogDirectory);
             }
         }
 
-        public async Task LogInfo(string message)
+        private Task Log(LogMessage logMessage)
         {
-            await Task.CompletedTask;
-            await Log(new LogMessage(LogSeverity.Info, OverseerSource, message));
-        }
-
-        public async Task LogError(string caller, string method, string reason)
-        {
-            await Task.CompletedTask;
-            await Log(new LogMessage(LogSeverity.Error, OverseerSource, $"{caller}'s attempt to invoke {method} failed: {reason}"));
-        }
-
-        private async Task Log(LogMessage msg)
-        {
-            var filename = $"{_logDirectory}/{DateTime.Now.ToString(DateFormat)}.log";
-            var text = msg.ToString(padSource: _sourcePadLength);
+            var filename = $"{LogDirectory}/{DateTime.Now.ToString(DateFormat)}.log";
+            var text = logMessage.ToString(padSource: SourcePadLength);
             using var writer = File.AppendText(filename);
 
             writer.WriteLine(text);
             Console.WriteLine(text);
 
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
     }
 }

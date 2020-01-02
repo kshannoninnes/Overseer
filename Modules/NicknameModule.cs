@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 
 // TODO Replace if-elses with a decorator-style validator
-// TODO Change command names
 namespace Overseer.Modules
 {
     [Name("Nicknames"), RequireOwner(Group = "Permission"), RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
@@ -17,13 +16,13 @@ namespace Overseer.Modules
     {
         private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
 
+        private readonly ILogger _logger;
         private readonly UserService _us;
-        private readonly LoggingService _logger;
 
-        public NicknameModule(UserService us, LoggingService logger)
+        public NicknameModule(UserService us, ILogger logger)
         {
-            _us = us;
             _logger = logger;
+            _us = us;
         }
 
         [Name("Rename"), Command("rename"), Summary("Enforce a non-admin user's nickname.\n\n**Usage**: >rename [all | @user] [name]")]
@@ -31,6 +30,7 @@ namespace Overseer.Modules
         {
             var bot = Context.Guild.CurrentUser;
             var caller = Context.User.Username;
+            var method = nameof(RenameAsync);
             var target = user.Username;
 
             try
@@ -40,27 +40,27 @@ namespace Overseer.Modules
 
                 if (userIsEnforced)
                 {
-                    var targetAlreadyEnforced = $"{target} is already enforced";
-                    await _logger.LogError(caller, nameof(RenameAsync), targetAlreadyEnforced);
+                    var targetAlreadyEnforced = $"{target} is already enforced.";
+                    await _logger.Log(LogSeverity.Error, targetAlreadyEnforced, method, caller);
                     await ReplyAsync($"{targetAlreadyEnforced}. Type `>revert @{target}` to stop nickname enforcement.");
                     return;
                 }
                 else if (!botCanModifyUser)
                 {
-                    var inadequatePermissions = $"Inadequate permissions to modify {target}";
-                    await _logger.LogError(caller, nameof(RenameAsync), inadequatePermissions);
+                    var inadequatePermissions = $"Inadequate permissions to modify {target}.";
+                    await _logger.Log(LogSeverity.Error, inadequatePermissions, method, caller);
                     await ReplyAsync($"{inadequatePermissions}. Ensure bot has a higher role than the user and try again.");
                     return;
                 }
                 else
                 {
                     await _us.RenameUserAsync(user, name);
-                    await _logger.LogInfo($"{caller} renamed {target} to {name}");
+                    await _logger.Log(LogSeverity.Info, $"{target} renamed to {name}.", method, caller);
                 }
             }
             catch(CommandException e)
             {
-                await _logger.LogError(caller, nameof(RenameAsync), e.Message);
+                await _logger.Log(LogSeverity.Error, e.Message, method, caller);
                 await ReplyAsync("Could not execute __**rename**__");
             }
         }
@@ -69,6 +69,7 @@ namespace Overseer.Modules
         public async Task RenameAsync([Summary("all")] string target, [Remainder][Summary("The name to give to users")] string name)
         {
             var caller = Context.User.Username;
+            var method = nameof(RenameAsync);
             var arg = target.Replace("\'", string.Empty).Replace("\"", string.Empty);
 
             try
@@ -76,7 +77,7 @@ namespace Overseer.Modules
                 if (!arg.Equals("all", StringComparison.OrdinalIgnoreCase))
                 {
                     var invalidTarget = $"\"{target}\" is not a valid target.";
-                    await _logger.LogError(caller, nameof(RenameAsync), invalidTarget);
+                    await _logger.Log(LogSeverity.Error, invalidTarget, method, caller);
                     await ReplyAsync($"{invalidTarget}.");
                     return;
                 }
@@ -84,14 +85,14 @@ namespace Overseer.Modules
                 if (!(await semaphore.WaitAsync(0))) // Ensure only 1 instance of a long running command is active at any given time
                 {
                     var alreadyRunning = $"Another command is still in progress. Please wait until it's finished before trying again.";
-                    await _logger.LogError(caller, nameof(RenameAsync), alreadyRunning);
+                    await _logger.Log(LogSeverity.Error, alreadyRunning, method, caller);
                     await ReplyAsync($"{alreadyRunning}");
                     return;
                 }
 
                 var stopwatch = new Stopwatch();
                 var msg = $"Beginning mass rename to {name}.";
-                await _logger.LogInfo(msg);
+                await _logger.Log(LogSeverity.Info, msg, method, caller);
                 await ReplyAsync(msg);
 
                 stopwatch.Start();
@@ -100,13 +101,12 @@ namespace Overseer.Modules
                 stopwatch.Stop();
 
                 var duration = Math.Round(stopwatch.Elapsed.TotalSeconds, 1);
-                var renameComplete = "Mass rename complete."; 
-                await _logger.LogInfo($"{renameComplete} {totalUsersRenamed} users renamed over {duration}s.");
-                await ReplyAsync(renameComplete);
+                await _logger.Log(LogSeverity.Info, $"Renamed {totalUsersRenamed} in {duration}s.", method, caller);
+                await ReplyAsync("Mass rename complete.");
             }
             catch (CommandException e)
             {
-                await _logger.LogError(caller, nameof(RenameAsync), e.Message);
+                await _logger.Log(LogSeverity.Error, e.Message, method, caller);
                 await ReplyAsync("Could not execute __**rename**__");
             }
             finally
@@ -120,6 +120,7 @@ namespace Overseer.Modules
         {
             var bot = Context.Guild.CurrentUser;
             var caller = Context.User.Username;
+            var method = nameof(RevertAsync);
             var target = user.Username;
 
             try
@@ -129,28 +130,28 @@ namespace Overseer.Modules
 
                 if (!userIsEnforced)
                 {
-                    var targetNotEnforced = $"{target} is not currently being enforced";
-                    await _logger.LogError(caller, nameof(RevertAsync), targetNotEnforced);
+                    var targetNotEnforced = $"{target} is not currently being enforced.";
+                    await _logger.Log(LogSeverity.Error, targetNotEnforced, method, caller);
                     await ReplyAsync($"{targetNotEnforced}. Type `>rename @{user.Username} [name to enforce]` to begin nickname enforcement.");
                     return;
                 }
 
                 if (!botCanModifyUser)
                 {
-                    var inadequatePermissions = $"Inadequate permissions to modify {target}";
-                    await _logger.LogError(caller, nameof(RenameAsync), inadequatePermissions);
+                    var inadequatePermissions = $"Inadequate permissions to modify {target}.";
+                    await _logger.Log(LogSeverity.Error, inadequatePermissions, method, caller);
                     await ReplyAsync($"{inadequatePermissions}. Ensure bot has a higher role than the user and try again.");
                     return;
                 }
                 else
                 {
                     await _us.RevertUserAsync(user);
-                    await _logger.LogInfo($"Restored nickname for {user.Username}");
+                    await _logger.Log(LogSeverity.Info, $"Restored nickname for {user.Username}.", method, caller);
                 }
             }
             catch (CommandException e)
             {
-                await _logger.LogError(caller, nameof(RevertAsync), e.Message);
+                await _logger.Log(LogSeverity.Error, e.Message, method, caller);
                 await ReplyAsync("Could not execute __**revert**__");
             }
         }
@@ -159,6 +160,7 @@ namespace Overseer.Modules
         public async Task RevertAsync([Summary("all")] string target)
         {
             var caller = Context.User.Username;
+            var method = nameof(RevertAsync);
             var arg = target.Replace("\'", string.Empty).Replace("\"", string.Empty);
 
             try
@@ -166,22 +168,22 @@ namespace Overseer.Modules
                 if (!arg.Equals("all", StringComparison.OrdinalIgnoreCase))
                 {
                     var invalidTarget = $"\"{target}\" is not a valid target.";
-                    await _logger.LogError(caller, nameof(RenameAsync), invalidTarget);
-                    await ReplyAsync($"{invalidTarget}");
+                    await _logger.Log(LogSeverity.Error, invalidTarget, method, caller);
+                    await ReplyAsync(invalidTarget);
                     return;
                 }
 
                 if (!(await semaphore.WaitAsync(0))) // Ensure only 1 instance of a long running command is active at any given time
                 {
                     var alreadyRunning = $"Another command is still in progress. Please wait until it's finished before trying again.";
-                    await _logger.LogError(caller, nameof(RenameAsync), alreadyRunning);
+                    await _logger.Log(LogSeverity.Error, alreadyRunning, method, caller);
                     await ReplyAsync($"{alreadyRunning}");
                     return;
                 }
 
                 var stopwatch = new Stopwatch();
                 var msg = $"Beginning mass revert.";
-                await _logger.LogInfo(msg);
+                await _logger.Log(LogSeverity.Info, msg, method, caller);
                 await ReplyAsync(msg);
 
                 stopwatch.Start();
@@ -190,13 +192,12 @@ namespace Overseer.Modules
                 stopwatch.Stop();
 
                 var duration = Math.Round(stopwatch.Elapsed.TotalSeconds, 1);
-                var revertComplete = "Mass revert complete.";
-                await _logger.LogInfo($"{revertComplete} {totalUsersReverted} users reverted over {duration}s.");
-                await ReplyAsync(revertComplete);
+                await _logger.Log(LogSeverity.Info, $"{totalUsersReverted} users reverted over {duration}s.", method, caller);
+                await ReplyAsync("Mass revert complete.");
             }
             catch (CommandException e)
             {
-                await _logger.LogError(caller, nameof(RevertAsync), e.Message);
+                await _logger.Log(LogSeverity.Error, e.Message, method, caller);
                 await ReplyAsync("Could not execute __**revert**__");
             }
             finally

@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.Commands;
 using Overseer.Services;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,10 +9,10 @@ namespace Overseer.Modules
     [Name("Core")]
     public class CoreModule : ModuleBase<SocketCommandContext>
     {
-        private readonly LoggingService _logger;
+        private readonly ILogger _logger;
         private readonly CommandService _commandService;
 
-        public CoreModule(LoggingService logger, CommandService commandService)
+        public CoreModule(ILogger logger, CommandService commandService)
         {
             _logger = logger;
             _commandService = commandService;
@@ -23,6 +22,7 @@ namespace Overseer.Modules
         [Summary("View a list of useful information for Overseer.\n\n**Usage**: >help [command]")]
         public async Task HelpAsync()
         {
+            var caller = Context.User.Username;
             var modules = _commandService.Modules;
             var embedBuilder = new EmbedBuilder
             {
@@ -43,7 +43,7 @@ namespace Overseer.Modules
                 embedBuilder.AddField(moduleName, commandsText);
             }
 
-            await _logger.LogInfo($"{Context.User.Username} invoked \"help\".");
+            await _logger.Log(LogSeverity.Info, "Generic help displayed.", nameof(HelpAsync), caller);
             await ReplyAsync(embed: embedBuilder.Build());
         }
 
@@ -51,13 +51,15 @@ namespace Overseer.Modules
         public async Task HelpAsync(string commandName)
         {
             var caller = Context.User.Username;
+            var methodName = nameof(HelpAsync);
+
             var commands = _commandService.Commands;
             var command = new List<CommandInfo>(commands).Find(x => x.Name.Equals(commandName, System.StringComparison.OrdinalIgnoreCase));
 
             if (command == null)
             {
                 var commandNotFound = $"Command \"{commandName}\" not found.";
-                await _logger.LogError(caller, nameof(HelpAsync), commandNotFound);
+                await _logger.Log(LogSeverity.Error, commandNotFound, methodName, caller);
                 await ReplyAsync(commandNotFound);
                 return;
             }
@@ -69,9 +71,8 @@ namespace Overseer.Modules
                 Color = Defaults.Embed.Color
             };
 
-            await _logger.LogInfo($"{Context.User.Username} invoked \"help\" for command \"{commandName}\".");
-            await ReplyAsync(embed: embedBuilder.Build());
-
+            await _logger.Log(LogSeverity.Info, $"Help for {embedBuilder.Title} displayed.", methodName, caller);
+            await ReplyAsync(embed: embedBuilder.Build()); 
         }
     }
 }

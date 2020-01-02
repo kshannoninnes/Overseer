@@ -25,7 +25,7 @@ namespace Overseer
             #if DEBUG
                 Environment.GetEnvironmentVariable("TestToken");
             #else
-                return Environment.GetEnvironmentVariable("OverseerToken");
+                Environment.GetEnvironmentVariable("OverseerToken");
             #endif
 
         // Discord.NET framework is all asynchronous, so it requires an async main method
@@ -49,17 +49,15 @@ namespace Overseer
             var db = new DatabaseHandler("overseer.db");
             await db.CreateTable<EnforcedUser>();
 
-            var logger = new LoggingService(_client, _commands, "Logs", sourcePadLength: 20);
-
-            var userService = new UserService(_client, db, logger);
-            await userService.StartMaintainingAsync();
-
-            var weebService = new WeebService(logger);
-
             var map = new ServiceCollection()
-                .AddSingleton(logger)
-                .AddSingleton(userService)
-                .AddSingleton(weebService);
+                .AddSingleton(db)
+                .AddSingleton(_client)
+                .AddSingleton(_commands)
+                .AddScoped<ILogger, LoggingService>()
+                .AddScoped<UserService>()
+                .AddScoped<EmbedService>()
+                .AddScoped<AnimeService>()
+                .AddScoped<MangaService>();
 
             return map.BuildServiceProvider();
         }

@@ -1,13 +1,5 @@
 ﻿using Discord;
-using GraphQL.Client;
-using GraphQL.Common.Request;
-using GraphQL.Common.Response;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Overseer.Exceptions;
-using Overseer.Handlers;
 using Overseer.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -16,34 +8,16 @@ using System.Threading.Tasks;
 namespace Overseer.Services
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]
-    public class WeebService
+    public class EmbedService
     {
-        private readonly LoggingService _logger;
+        private readonly ILogger _logger;
 
-        public WeebService(LoggingService logger)
+        public EmbedService(ILogger logger)
         {
             _logger = logger;
         }
 
-        public async Task<OverseerMedia> GetMedia(string title, ReleaseType type)
-        {
-            var request = new GraphQLRequest
-            {
-                Query = await CraftQuery(type),
-                Variables = new
-                {
-                    search = title
-                }
-            };
-            using var graphqlClient = new GraphQLClient("https://graphql.anilist.co");
-            var response = await graphqlClient.PostAsync(request);
-            await ValidateResponse(response);
-
-            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            return JsonConvert.DeserializeObject<OverseerMedia>(response.Data.Media.ToString(), settings);
-        }
-
-        public async Task<Embed> BuildEmbed(OverseerMedia media, ReleaseType type)
+        public async Task<Embed> CraftEmbed(OverseerMedia media, ReleaseType type)
         {
             // attributes
             var title = $"**{media.Title.Romaji}**";
@@ -93,56 +67,6 @@ namespace Overseer.Services
         private async Task AddEmptyField(EmbedBuilder eb, bool inline)
         {
             await AddField(eb, "\u200b", "\u200b", inline);
-        }
-
-        private async Task<string> CraftQuery(ReleaseType type)
-        {
-            await Task.CompletedTask;
-            string releaseType;
-            string mediaType;
-
-            switch (type)
-            {
-                case ReleaseType.Manga:
-                    releaseType = "chapters";
-                    mediaType = "MANGA";
-                    break;
-                default:
-                    releaseType = "episodes";
-                    mediaType = "ANIME";
-                    break;
-            }
-
-            return "query MediaSearch($search: String) { " +
-                        $"Media (search: $search, type: {mediaType}) {{ " +
-                        "title { romaji } " +
-                        "format " +
-                        "siteUrl " +
-                        "description " +
-                        "coverImage { extraLarge } " +
-                        "status " +
-                        $"{releaseType} " +
-                        "tags { name rank isMediaSpoiler } " +
-                        "genres " +
-                    "} }";
-
-        }
-
-        // TODO Improve error handling here
-        private async Task ValidateResponse(GraphQLResponse res)
-        {
-            await Task.CompletedTask;
-            if (res.Errors != null)
-            {
-                var message = string.Empty;
-
-                foreach (var error in res.Errors)
-                {
-                    message += error.Message + "\n";
-                }
-
-                throw new UpstreamApiException(message[0..^1]);
-            }
         }
 
         private async Task<string> RemoveBlacklistedSubstrings(string text)

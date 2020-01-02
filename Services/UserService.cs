@@ -15,13 +15,14 @@ namespace Overseer.Services
     {
         private readonly DiscordSocketClient _client;
         private readonly DatabaseHandler _db;
-        private readonly LoggingService _logger;
+        private readonly ILogger _logger;
 
-        public UserService(DiscordSocketClient client, DatabaseHandler db, LoggingService logger)
+        public UserService(DiscordSocketClient client, DatabaseHandler db, ILogger logger)
         {
             _client = client;
             _db = db;
             _logger = logger;
+            StartMaintainingAsync();
         }
 
         /// <summary>
@@ -141,11 +142,11 @@ namespace Overseer.Services
         /// <returns>
         ///     A task representing the asynchronous start operation
         /// </returns>
-        public async Task StartMaintainingAsync()
+        public Task StartMaintainingAsync()
         {
             _client.GuildMemberUpdated += MaintainAllNicknames;
             _client.UserJoined += SetNicknameOnNewUser;
-            await Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -174,7 +175,7 @@ namespace Overseer.Services
                 if (hasEnforcedName && canModify && wrongNickname)
                 {
                     await after.ModifyAsync(x => x.Nickname = enforcedNickname);
-                    await _logger.LogInfo($"User {after.Username} updated nickname, setting nickname to \"{enforcedNickname}\"");
+                    await _logger.Log(LogSeverity.Info, $"{after.Username}'s nickname changed to {enforcedNickname}", nameof(MaintainAllNicknames), "Discord.NET");
                 }
             }
         }
@@ -195,7 +196,7 @@ namespace Overseer.Services
                 var id = await GetIdPredicate(user.Id);
                 var enforcedNickname = (await _db.GetAsync(id)).EnforcedNickname;
                 await user.ModifyAsync(x => x.Nickname = enforcedNickname);
-                await _logger.LogInfo($"New user {user.Username}, setting nickname to \"{enforcedNickname}\"");
+                await _logger.Log(LogSeverity.Info, $"{user.Username}'s nickname set to {enforcedNickname}", nameof(SetNicknameOnNewUser), "Discord.NET");
             }
         }
 
