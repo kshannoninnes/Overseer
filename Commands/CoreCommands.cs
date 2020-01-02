@@ -5,6 +5,7 @@ using Discord;
 using Discord.Commands;
 
 using Overseer.Services.Logging;
+using System.Linq;
 
 namespace Overseer.Commands
 {
@@ -25,7 +26,7 @@ namespace Overseer.Commands
         public async Task HelpAsync()
         {
             var caller = Context.User.Username;
-            var modules = _commandService.Modules;
+            var modules = _commandService.Modules.ToList().OrderBy(x => x.Name);
             var embedBuilder = new EmbedBuilder
             {
                 Title = "Available Commands",
