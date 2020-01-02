@@ -17,10 +17,10 @@ namespace Overseer.Services.Discord
     public class UserManager
     {
         private readonly DiscordSocketClient _client;
-        private readonly DatabaseManager _db;
+        private readonly IDatabaseManager _db;
         private readonly ILogger _logger;
 
-        public UserManager(DiscordSocketClient client, DatabaseManager db, ILogger logger)
+        public UserManager(DiscordSocketClient client, IDatabaseManager db, ILogger logger)
         {
             _client = client;
             _db = db;
@@ -33,7 +33,7 @@ namespace Overseer.Services.Discord
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<bool> IsTrackedAsync(ulong id)
+        public async Task<bool> IsForcedAsync(ulong id)
         {
             var pred = await GetIdPredicate(id);
             var isEnforced = await _db.Exists(pred);
@@ -164,7 +164,7 @@ namespace Overseer.Services.Discord
         /// </returns>
         private async Task MaintainAllNicknames(SocketGuildUser before, SocketGuildUser after)
         {
-            if (await IsTrackedAsync(after.Id))
+            if (await IsForcedAsync(after.Id))
             {
                 var pred = await GetIdPredicate(after.Id);
                 var enforcedNickname = (await _db.GetAsync(pred)).EnforcedNickname;
@@ -178,7 +178,7 @@ namespace Overseer.Services.Discord
                 if (hasEnforcedName && canModify && wrongNickname)
                 {
                     await after.ModifyAsync(x => x.Nickname = enforcedNickname);
-                    await _logger.Log(LogSeverity.Info, $"{after.Username}'s nickname changed to {enforcedNickname}", nameof(MaintainAllNicknames), "Discord.NET");
+                    await _logger.Log(LogSeverity.Info, $"{after.Username}'s nickname changed to {enforcedNickname}", nameof(MaintainAllNicknames));
                 }
             }
         }
@@ -194,12 +194,12 @@ namespace Overseer.Services.Discord
         /// </returns>
         private async Task SetNicknameOnNewUser(SocketGuildUser user)
         {
-            if (await IsTrackedAsync(user.Id))
+            if (await IsForcedAsync(user.Id))
             {
                 var id = await GetIdPredicate(user.Id);
                 var enforcedNickname = (await _db.GetAsync(id)).EnforcedNickname;
                 await user.ModifyAsync(x => x.Nickname = enforcedNickname);
-                await _logger.Log(LogSeverity.Info, $"{user.Username}'s nickname set to {enforcedNickname}", nameof(SetNicknameOnNewUser), "Discord.NET");
+                await _logger.Log(LogSeverity.Info, $"{user.Username}'s nickname set to {enforcedNickname}", nameof(SetNicknameOnNewUser));
             }
         }
 

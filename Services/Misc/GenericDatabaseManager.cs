@@ -7,12 +7,12 @@ using System.Collections.Generic;
 
 namespace Overseer.Services.Misc
 {
-    public class DatabaseManager
+    public class GenericDatabaseManager : IDatabaseManager
     {
         private readonly string _dbPath;
         private readonly SQLiteAsyncConnection _conn;
 
-        public DatabaseManager(string filename)
+        public GenericDatabaseManager(string filename)
         {
             _dbPath = Path.Combine(Environment.CurrentDirectory, filename);
             _conn = new SQLiteAsyncConnection(_dbPath);

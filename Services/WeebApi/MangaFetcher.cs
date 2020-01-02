@@ -1,19 +1,23 @@
 ﻿using System.Threading.Tasks;
 
 using Overseer.Models;
-using Overseer.Services.Logging;
 
 namespace Overseer.Services.WeebApi
 {
-    public class MangaFetcher : MediaFetcher
+    public class MangaFetcher : IMediaFetcher
     {
         private const string SearchType = "MANGA";
 
-        public MangaFetcher(ILogger logger) : base(logger) { }
+        private readonly AbstractApiService _fetcher;
 
-        public override async Task<OverseerMedia> GetMediaAsync(string title)
+        public MangaFetcher(AbstractApiService fetcher)
         {
-            return await GetMediaAsync(title, SearchType);
+            _fetcher = fetcher;
+        }
+
+        public async Task<OverseerMedia> GetAsync(string title)
+        {
+            return await _fetcher.GetMediaAsync(title, SearchType);
         }
     }
 }

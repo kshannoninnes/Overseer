@@ -1,50 +1,24 @@
-﻿using Newtonsoft.Json;
-using System.Threading.Tasks;
-
-using GraphQL.Client;
-using GraphQL.Common.Request;
+﻿using Discord;
 using GraphQL.Common.Response;
-
-using Discord;
-
 using Overseer.Exceptions;
 using Overseer.Models;
 using Overseer.Services.Logging;
+using System.Threading.Tasks;
 
 namespace Overseer.Services.WeebApi
 {
-    public abstract class MediaFetcher : IMediaFetcher
+    public abstract class AbstractApiService
     {
-        public abstract Task<OverseerMedia> GetMediaAsync(string search);
+        public abstract Task<OverseerMedia> GetMediaAsync(string search, string type);
 
         private readonly ILogger _logger;
 
-        protected MediaFetcher(ILogger logger)
+        public AbstractApiService(ILogger logger)
         {
             _logger = logger;
         }
 
-        protected async Task<OverseerMedia> GetMediaAsync(string search, string type)
-        {
-            var request = new GraphQLRequest
-            {
-                Query = CraftQuery(ReleaseType.Manga),
-                Variables = new
-                {
-                    search,
-                    type
-                },
-                OperationName = "MediaSearch"
-            };
-            using var graphqlClient = new GraphQLClient("https://graphql.anilist.co");
-            var response = await graphqlClient.PostAsync(request);
-            await ValidateApiResponse(response);
-
-            var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
-            return JsonConvert.DeserializeObject<OverseerMedia>(response.Data.Media.ToString(), settings);
-        }
-
-        private async Task ValidateApiResponse(GraphQLResponse res)
+        protected async Task ValidateApiResponse(GraphQLResponse res)
         {
             if (res.Errors != null)
             {
@@ -59,7 +33,7 @@ namespace Overseer.Services.WeebApi
             }
         }
 
-        private static string CraftQuery(ReleaseType type)
+        protected static string CraftQuery(ReleaseType type)
         {
             var releaseType = type == ReleaseType.Manga ? "chapters" : "episodes";
 

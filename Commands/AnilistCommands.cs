@@ -19,7 +19,7 @@ namespace Overseer.Commands
         private readonly IMediaFetcher _mangaFetcher;
         private readonly IMediaFetcher _animeFetcher;
 
-        public AnilistCommands(ILogger logger, EmbedManager es, MangaFetcher mf, AnimeFetcher af)
+        public AnilistCommands(ILogger logger, EmbedManager es, IMediaFetcher mf, IMediaFetcher af)
         {
             _logger = logger;
             _embedService = es;
@@ -40,10 +40,10 @@ namespace Overseer.Commands
 
             try
             {
-                var media = await fetcher.GetMediaAsync(title);
+                var media = await fetcher.GetAsync(title);
                 var embed = await _embedService.CraftEmbed(media, type);
 
-                await _logger.Log(LogSeverity.Info, $"\"{title}\" matched to \"{media.Title.Romaji}\".", methodName, caller);
+                await _logger.Log(LogSeverity.Info, $"{title} matched to {media.Title.Romaji}.", methodName, caller);
                 await ReplyAsync(embed: embed);
             }
             catch (UpstreamApiException e)

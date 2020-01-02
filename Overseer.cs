@@ -47,21 +47,21 @@ namespace Overseer
             await Task.Delay(Timeout.Infinite);
         }
 
-        // Ensure all services have have any dependencies injected before registration
         private async Task<IServiceProvider> ConfigureServices()
         {
-            var db = new DatabaseManager("overseer.db");
+            var db = new GenericDatabaseManager("overseer.db");
             await db.CreateTable<EnforcedUser>();
 
             var map = new ServiceCollection()
-                .AddSingleton(db)
+                .AddSingleton<IDatabaseManager>(db)
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
                 .AddScoped<ILogger, LoggingService>()
                 .AddScoped<UserManager>()
                 .AddScoped<EmbedManager>()
-                .AddScoped<AnimeFetcher>()
-                .AddScoped<MangaFetcher>();
+                .AddScoped<IMediaFetcher, AnimeFetcher>()
+                .AddScoped<IMediaFetcher, MangaFetcher>()
+                .AddScoped<AbstractApiService, AnilistApiService>();
 
             return map.BuildServiceProvider();
         }

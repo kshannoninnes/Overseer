@@ -6,6 +6,6 @@ namespace Overseer.Services.WeebApi
 {
     public interface IMediaFetcher
     {
-        Task<OverseerMedia> GetMediaAsync(string title);
+        Task<OverseerMedia> GetAsync(string search);
     }
 }

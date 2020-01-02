@@ -38,20 +38,20 @@ namespace Overseer.Commands
             try
             {
                 var botCanModifyUser = await _us.CanModify(bot, user);
-                var userIsEnforced = await _us.IsTrackedAsync(user.Id);
+                var userIsEnforced = await _us.IsForcedAsync(user.Id);
 
                 if (userIsEnforced)
                 {
                     var targetAlreadyEnforced = $"{target} is already enforced.";
                     await _logger.Log(LogSeverity.Error, targetAlreadyEnforced, method, caller);
-                    await ReplyAsync($"{targetAlreadyEnforced}. Type `>revert @{target}` to stop nickname enforcement.");
+                    await ReplyAsync($"{targetAlreadyEnforced} Type `>revert @{target}` to stop nickname enforcement.");
                     return;
                 }
                 else if (!botCanModifyUser)
                 {
                     var inadequatePermissions = $"Inadequate permissions to modify {target}.";
                     await _logger.Log(LogSeverity.Error, inadequatePermissions, method, caller);
-                    await ReplyAsync($"{inadequatePermissions}. Ensure bot has a higher role than the user and try again.");
+                    await ReplyAsync($"{inadequatePermissions} Ensure bot has a higher role than the user and try again.");
                     return;
                 }
                 else
@@ -80,7 +80,7 @@ namespace Overseer.Commands
                 {
                     var invalidTarget = $"\"{target}\" is not a valid target.";
                     await _logger.Log(LogSeverity.Error, invalidTarget, method, caller);
-                    await ReplyAsync($"{invalidTarget}.");
+                    await ReplyAsync($"{invalidTarget}");
                     return;
                 }
 
@@ -127,14 +127,14 @@ namespace Overseer.Commands
 
             try
             {
-                var userIsEnforced = await _us.IsTrackedAsync(user.Id);
+                var userIsEnforced = await _us.IsForcedAsync(user.Id);
                 var botCanModifyUser = await _us.CanModify(bot, user);
 
                 if (!userIsEnforced)
                 {
                     var targetNotEnforced = $"{target} is not currently being enforced.";
                     await _logger.Log(LogSeverity.Error, targetNotEnforced, method, caller);
-                    await ReplyAsync($"{targetNotEnforced}. Type `>rename @{user.Username} [name to enforce]` to begin nickname enforcement.");
+                    await ReplyAsync($"{targetNotEnforced} Type `>rename @{user.Username} [name to enforce]` to begin nickname enforcement.");
                     return;
                 }
 
@@ -142,7 +142,7 @@ namespace Overseer.Commands
                 {
                     var inadequatePermissions = $"Inadequate permissions to modify {target}.";
                     await _logger.Log(LogSeverity.Error, inadequatePermissions, method, caller);
-                    await ReplyAsync($"{inadequatePermissions}. Ensure bot has a higher role than the user and try again.");
+                    await ReplyAsync($"{inadequatePermissions} Ensure bot has a higher role than the user and try again.");
                     return;
                 }
                 else
