@@ -1,18 +1,20 @@
-﻿using Discord;
-using Discord.Commands;
-using Overseer.Services;
+﻿using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 
-namespace Overseer.Modules
+using Discord;
+using Discord.Commands;
+
+using Overseer.Services.Logging;
+
+namespace Overseer.Commands
 {
     [Name("Core")]
-    public class CoreModule : ModuleBase<SocketCommandContext>
+    public class CoreCommands : ModuleBase<SocketCommandContext>
     {
         private readonly ILogger _logger;
         private readonly CommandService _commandService;
 
-        public CoreModule(ILogger logger, CommandService commandService)
+        public CoreCommands(ILogger logger, CommandService commandService)
         {
             _logger = logger;
             _commandService = commandService;
@@ -27,14 +29,14 @@ namespace Overseer.Modules
             var embedBuilder = new EmbedBuilder
             {
                 Title = "Available Commands",
-                Color = Defaults.Embed.Color
+                Color = Constants.Embed.Color
             };
 
             foreach (var module in modules)
             {
                 var listOfCommands = new HashSet<string>();
                 var moduleName = module.Name;
-                foreach(var command in module.Commands)
+                foreach (var command in module.Commands)
                 {
                     listOfCommands.Add(command.Name.ToLower());
                 }
@@ -68,11 +70,11 @@ namespace Overseer.Modules
             {
                 Title = command.Name,
                 Description = command.Summary,
-                Color = Defaults.Embed.Color
+                Color = Constants.Embed.Color
             };
 
             await _logger.Log(LogSeverity.Info, $"Help for {embedBuilder.Title} displayed.", methodName, caller);
-            await ReplyAsync(embed: embedBuilder.Build()); 
+            await ReplyAsync(embed: embedBuilder.Build());
         }
     }
 }

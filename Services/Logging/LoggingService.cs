@@ -1,11 +1,12 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace Overseer.Services
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+
+namespace Overseer.Services.Logging
 {
     public class LoggingService : ILogger
     {

@@ -1,16 +1,15 @@
-﻿using GraphQL.Client;
-using GraphQL.Common.Request;
-using Newtonsoft.Json;
-using Overseer.Models;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Overseer.Services
+using Overseer.Models;
+using Overseer.Services.Logging;
+
+namespace Overseer.Services.WeebApi
 {
-    public class AnimeService : MediaFetcher
+    public class AnimeFetcher : MediaFetcher
     {
         private const string SearchType = "ANIME";
 
-        public AnimeService(ILogger logger) : base(logger) { }
+        public AnimeFetcher(ILogger logger) : base(logger) { }
 
         public async override Task<OverseerMedia> GetMediaAsync(string title)
         {

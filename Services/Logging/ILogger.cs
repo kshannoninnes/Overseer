@@ -1,7 +1,8 @@
-﻿using Discord;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Overseer.Services
+using Discord;
+
+namespace Overseer.Services.Logging
 {
     public interface ILogger
     {

@@ -1,23 +1,26 @@
-﻿using Discord;
-using Discord.WebSocket;
-using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Overseer.Handlers;
-using Overseer.Models;
 using System.Linq.Expressions;
-using System;
+using System.Collections.Generic;
 
-namespace Overseer.Services
+using Discord;
+using Discord.WebSocket;
+
+using Overseer.Models;
+using Overseer.Services.Misc;
+using Overseer.Services.Logging;
+
+namespace Overseer.Services.Discord
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]
-    public class UserService
+    public class UserManager
     {
         private readonly DiscordSocketClient _client;
-        private readonly DatabaseHandler _db;
+        private readonly DatabaseManager _db;
         private readonly ILogger _logger;
 
-        public UserService(DiscordSocketClient client, DatabaseHandler db, ILogger logger)
+        public UserManager(DiscordSocketClient client, DatabaseManager db, ILogger logger)
         {
             _client = client;
             _db = db;
@@ -62,7 +65,7 @@ namespace Overseer.Services
         public async Task<int> RenameAllUsersAsync(IEnumerable<IGuildUser> users, string enforcedName)
         {
             var numUsersRenamed = 0;
-            foreach(var user in users)
+            foreach (var user in users)
             {
                 var pred = await GetIdPredicate(user.Id);
                 var isEnforced = await _db.Exists(pred);
@@ -113,8 +116,8 @@ namespace Overseer.Services
         public async Task<IEnumerable<IGuildUser>> GetActionableUsersAsync(IGuild guild)
         {
             var opt = new RequestOptions() { RetryMode = RetryMode.AlwaysRetry };
-            var allUsers = (await guild.GetUsersAsync(CacheMode.AllowDownload, options: opt)) as IEnumerable<SocketGuildUser>;
-            var bot = (await guild.GetCurrentUserAsync()) as SocketGuildUser;
+            var allUsers = await guild.GetUsersAsync(CacheMode.AllowDownload, options: opt) as IEnumerable<SocketGuildUser>;
+            var bot = await guild.GetCurrentUserAsync() as SocketGuildUser;
 
             return allUsers.Where(x => !x.IsBot && x.Hierarchy < bot.Hierarchy);
         }

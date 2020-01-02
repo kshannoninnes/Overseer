@@ -1,11 +1,11 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace Overseer
+using Discord.Commands;
+using Discord.WebSocket;
+
+namespace Overseer.Services.Misc
 {
     public class CommandHandler
     {
@@ -38,21 +38,19 @@ namespace Overseer
 
             int argPos = 0;
 
-            if (!(message.HasCharPrefix('.', ref argPos) || 
-                message.HasMentionPrefix(_client.CurrentUser, ref argPos)) || 
+            if (!(message.HasCharPrefix('.', ref argPos) ||
+                message.HasMentionPrefix(_client.CurrentUser, ref argPos)) ||
                 message.Author.IsBot)
                 return;
 
             var context = new SocketCommandContext(_client, message);
 
-            // ...
             // Pass the service provider to the ExecuteAsync method for
             // precondition checks.
             await _commands.ExecuteAsync(
                 context: context,
                 argPos: argPos,
                 services: _services);
-            // ...
         }
     }
 }

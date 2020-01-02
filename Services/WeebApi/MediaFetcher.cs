@@ -1,13 +1,17 @@
-﻿using Discord;
+﻿using Newtonsoft.Json;
+using System.Threading.Tasks;
+
 using GraphQL.Client;
 using GraphQL.Common.Request;
 using GraphQL.Common.Response;
-using Newtonsoft.Json;
+
+using Discord;
+
 using Overseer.Exceptions;
 using Overseer.Models;
-using System.Threading.Tasks;
+using Overseer.Services.Logging;
 
-namespace Overseer.Services
+namespace Overseer.Services.WeebApi
 {
     public abstract class MediaFetcher : IMediaFetcher
     {
@@ -57,7 +61,7 @@ namespace Overseer.Services
 
         private static string CraftQuery(ReleaseType type)
         {
-            var releaseType = (type == ReleaseType.Manga) ? "chapters" : "episodes";
+            var releaseType = type == ReleaseType.Manga ? "chapters" : "episodes";
 
             return "query MediaSearch($search:String, $type:MediaType) " +
                    "{ " +

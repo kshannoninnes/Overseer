@@ -1,25 +1,27 @@
-﻿using Discord;
-using Discord.Commands;
-using Discord.WebSocket;
-using Overseer.Services;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.Threading;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
+using Discord;
+using Discord.Commands;
+using Discord.WebSocket;
+
+using Overseer.Services.Discord;
+using Overseer.Services.Logging;
+
 // TODO Replace if-elses with a decorator-style validator
-namespace Overseer.Modules
+namespace Overseer.Commands
 {
     [Name("Nicknames"), RequireOwner(Group = "Permission"), RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-    public class NicknameModule : ModuleBase<SocketCommandContext>
+    public class NicknameCommands : ModuleBase<SocketCommandContext>
     {
         private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
 
         private readonly ILogger _logger;
-        private readonly UserService _us;
+        private readonly UserManager _us;
 
-        public NicknameModule(UserService us, ILogger logger)
+        public NicknameCommands(UserManager us, ILogger logger)
         {
             _logger = logger;
             _us = us;
@@ -58,7 +60,7 @@ namespace Overseer.Modules
                     await _logger.Log(LogSeverity.Info, $"{target} renamed to {name}.", method, caller);
                 }
             }
-            catch(CommandException e)
+            catch (CommandException e)
             {
                 await _logger.Log(LogSeverity.Error, e.Message, method, caller);
                 await ReplyAsync("Could not execute __**rename**__");
@@ -82,7 +84,7 @@ namespace Overseer.Modules
                     return;
                 }
 
-                if (!(await semaphore.WaitAsync(0))) // Ensure only 1 instance of a long running command is active at any given time
+                if (!await semaphore.WaitAsync(0)) // Ensure only 1 instance of a long running command is active at any given time
                 {
                     var alreadyRunning = $"Another command is still in progress. Please wait until it's finished before trying again.";
                     await _logger.Log(LogSeverity.Error, alreadyRunning, method, caller);
@@ -114,7 +116,7 @@ namespace Overseer.Modules
                 semaphore.Release(1);
             }
         }
-        
+
         [Name("Revert"), Command("revert"), Summary("Stop enforcing a non-admin user's nickname.\n\n**Usage**: >revert [all | @user]")]
         public async Task RevertAsync([Summary("the user to be reverted")] SocketGuildUser user)
         {
@@ -173,7 +175,7 @@ namespace Overseer.Modules
                     return;
                 }
 
-                if (!(await semaphore.WaitAsync(0))) // Ensure only 1 instance of a long running command is active at any given time
+                if (!await semaphore.WaitAsync(0)) // Ensure only 1 instance of a long running command is active at any given time
                 {
                     var alreadyRunning = $"Another command is still in progress. Please wait until it's finished before trying again.";
                     await _logger.Log(LogSeverity.Error, alreadyRunning, method, caller);

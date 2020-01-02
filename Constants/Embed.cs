@@ -1,6 +1,6 @@
 ﻿using Discord;
 
-namespace Overseer.Defaults
+namespace Overseer.Constants
 {
     public static class Embed
     {

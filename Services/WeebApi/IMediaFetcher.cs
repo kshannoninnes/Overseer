@@ -1,7 +1,8 @@
-﻿using Overseer.Models;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Overseer.Services
+using Overseer.Models;
+
+namespace Overseer.Services.WeebApi
 {
     public interface IMediaFetcher
     {

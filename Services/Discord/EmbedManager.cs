@@ -1,18 +1,22 @@
-﻿using Discord;
-using Overseer.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
-namespace Overseer.Services
+using Discord;
+
+using Overseer.Models;
+using Overseer.Constants;
+using Overseer.Services.Logging;
+
+namespace Overseer.Services.Discord
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]
-    public class EmbedService
+    public class EmbedManager
     {
         private readonly ILogger _logger;
 
-        public EmbedService(ILogger logger)
+        public EmbedManager(ILogger logger)
         {
             _logger = logger;
         }
@@ -23,7 +27,7 @@ namespace Overseer.Services
             var title = $"**{media.Title.Romaji}**";
             var url = media.SiteUrl;
             var desc = await FormatDescription(media.Description);
-            var color = Defaults.Embed.Color;
+            var color = Overseer.Constants.Embed.Color;
             var thumbnail = media.CoverImage.ExtraLarge;
 
             // fields
@@ -57,7 +61,7 @@ namespace Overseer.Services
         private async Task AddField(EmbedBuilder eb, string name, string value, bool inline)
         {
             await Task.CompletedTask;
-            if(!string.IsNullOrWhiteSpace(name))
+            if (!string.IsNullOrWhiteSpace(name))
             {
                 value = string.IsNullOrWhiteSpace(value) ? "N/A" : value;
                 eb.AddField(name, value, inline);
@@ -72,12 +76,12 @@ namespace Overseer.Services
         private async Task<string> RemoveBlacklistedSubstrings(string text)
         {
             await Task.CompletedTask;
-            List<string> blacklistedSubstrings = new List<string> { 
-                "<.*?>", 
-                "\\(Source.*?\\)" 
+            List<string> blacklistedSubstrings = new List<string> {
+                "<.*?>",
+                "\\(Source.*?\\)"
             };
 
-            foreach(var entry in blacklistedSubstrings)
+            foreach (var entry in blacklistedSubstrings)
             {
                 text = Regex.Replace(text, entry, string.Empty);
             }
@@ -99,13 +103,13 @@ namespace Overseer.Services
         private async Task<string> GetType(ReleaseType type)
         {
             await Task.CompletedTask;
-            return (type == ReleaseType.Manga) ? "Chapters" : "Episodes";
+            return type == ReleaseType.Manga ? "Chapters" : "Episodes";
         }
 
         private async Task<string> GetNumberOfReleases(int numReleases)
         {
             await Task.CompletedTask;
-            return (numReleases == 0) ? "TBD" : numReleases.ToString(); // If episodes or chapters == 0, then it's still being released
+            return numReleases == 0 ? "TBD" : numReleases.ToString(); // If episodes or chapters == 0, then it's still being released
         }
 
         private async Task<string> GetGenres(List<string> genreList)
@@ -117,14 +121,14 @@ namespace Overseer.Services
         private async Task<string> GetTags(List<Tag> tagList)
         {
             await Task.CompletedTask;
-            return string.Join(", ", (tagList.Where(t => !t.IsMediaSpoiler && t.Rank > 50).Select(t => t.Name)));
+            return string.Join(", ", tagList.Where(t => !t.IsMediaSpoiler && t.Rank > 50).Select(t => t.Name));
         }
 
         private async Task<string> CapitalizeFirstLetter(string text)
         {
             await Task.CompletedTask;
-            string capitalizedText = (text.Length < 3) ? text.ToUpper() : char.ToUpper(text[0]) + text.Substring(1).ToLower();
-            
+            string capitalizedText = text.Length < 3 ? text.ToUpper() : char.ToUpper(text[0]) + text.Substring(1).ToLower();
+
             return capitalizedText;
         }
 
@@ -132,7 +136,7 @@ namespace Overseer.Services
         {
             var maxLength = 30;
             var separator = ", ";
-            
+
             return await FormatLength(text, maxLength, separator);
         }
 
@@ -143,14 +147,14 @@ namespace Overseer.Services
             var newText = string.Empty;
             var length = 0;
 
-            foreach(var part in parts)
+            foreach (var part in parts)
             {
-                if(length + part.Length > maxLength)
+                if (length + part.Length > maxLength)
                 {
-                    if (breakOnOverflow) 
-                    { 
-                        newText += $" ....."; 
-                        break; 
+                    if (breakOnOverflow)
+                    {
+                        newText += $" .....";
+                        break;
                     }
 
                     var addedText = $"\n{part}{separator}";
@@ -178,7 +182,7 @@ namespace Overseer.Services
             var maxLength = 185;
             var separator = " ";
             var newDesc = await FormatLength(description, maxLength, separator, breakOnOverflow: true);
-            
+
             return newDesc;
         }
     }

@@ -1,21 +1,25 @@
-﻿using Discord;
-using Discord.Commands;
-using Overseer.Exceptions;
-using Overseer.Models;
-using Overseer.Services;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace Overseer.Modules
+using Discord;
+using Discord.Commands;
+
+using Overseer.Models;
+using Overseer.Exceptions;
+using Overseer.Services.WeebApi;
+using Overseer.Services.Discord;
+using Overseer.Services.Logging;
+
+namespace Overseer.Commands
 {
     [Name("Weebshit")]
-    public class AnilistModule : ModuleBase<SocketCommandContext>
+    public class AnilistCommands : ModuleBase<SocketCommandContext>
     {
         private readonly ILogger _logger;
-        private readonly EmbedService _embedService;
+        private readonly EmbedManager _embedService;
         private readonly IMediaFetcher _mangaFetcher;
         private readonly IMediaFetcher _animeFetcher;
 
-        public AnilistModule(ILogger logger, EmbedService es, MangaService mf, AnimeService af)
+        public AnilistCommands(ILogger logger, EmbedManager es, MangaFetcher mf, AnimeFetcher af)
         {
             _logger = logger;
             _embedService = es;
@@ -42,7 +46,7 @@ namespace Overseer.Modules
                 await _logger.Log(LogSeverity.Info, $"\"{title}\" matched to \"{media.Title.Romaji}\".", methodName, caller);
                 await ReplyAsync(embed: embed);
             }
-            catch(UpstreamApiException e)
+            catch (UpstreamApiException e)
             {
                 await _logger.Log(LogSeverity.Error, e.Message, methodName, caller);
                 await ReplyAsync(e.Message);

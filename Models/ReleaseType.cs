@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Overseer.Models
+﻿namespace Overseer.Models
 {
     public enum ReleaseType
     {

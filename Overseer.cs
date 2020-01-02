@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
-using Overseer.Services;
-using Overseer.Handlers;
+
 using Overseer.Models;
+using Overseer.Services.Misc;
+using Overseer.Services.WeebApi;
+using Overseer.Services.Logging;
+using Overseer.Services.Discord;
 
 namespace Overseer
 {
@@ -46,7 +50,7 @@ namespace Overseer
         // Ensure all services have have any dependencies injected before registration
         private async Task<IServiceProvider> ConfigureServices()
         {
-            var db = new DatabaseHandler("overseer.db");
+            var db = new DatabaseManager("overseer.db");
             await db.CreateTable<EnforcedUser>();
 
             var map = new ServiceCollection()
@@ -54,10 +58,10 @@ namespace Overseer
                 .AddSingleton(_client)
                 .AddSingleton(_commands)
                 .AddScoped<ILogger, LoggingService>()
-                .AddScoped<UserService>()
-                .AddScoped<EmbedService>()
-                .AddScoped<AnimeService>()
-                .AddScoped<MangaService>();
+                .AddScoped<UserManager>()
+                .AddScoped<EmbedManager>()
+                .AddScoped<AnimeFetcher>()
+                .AddScoped<MangaFetcher>();
 
             return map.BuildServiceProvider();
         }

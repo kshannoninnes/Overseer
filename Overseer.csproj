@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Handlers\NicknameDbController.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Discord.Net" Version="2.1.1" />
     <PackageReference Include="GraphQL.Client" Version="1.0.3" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.6">
