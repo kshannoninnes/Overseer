@@ -27,7 +27,7 @@ namespace Overseer.Services.Discord
             var title = $"**{media.Title.Romaji}**";
             var url = media.SiteUrl;
             var desc = await FormatDescription(media.Description);
-            var color = Overseer.Constants.Embed.Color;
+            var color = EmbedConstants.Color;
             var thumbnail = media.CoverImage.ExtraLarge;
 
             // fields

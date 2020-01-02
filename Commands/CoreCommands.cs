@@ -29,7 +29,7 @@ namespace Overseer.Commands
             var embedBuilder = new EmbedBuilder
             {
                 Title = "Available Commands",
-                Color = Constants.Embed.Color
+                Color = Constants.EmbedConstants.Color
             };
 
             foreach (var module in modules)
@@ -70,7 +70,7 @@ namespace Overseer.Commands
             {
                 Title = command.Name,
                 Description = command.Summary,
-                Color = Constants.Embed.Color
+                Color = Constants.EmbedConstants.Color
             };
 
             await _logger.Log(LogSeverity.Info, $"Help for {embedBuilder.Title} displayed.", methodName, caller);
