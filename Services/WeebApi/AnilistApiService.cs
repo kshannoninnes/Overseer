@@ -3,11 +3,7 @@ using System.Threading.Tasks;
 
 using GraphQL.Client;
 using GraphQL.Common.Request;
-using GraphQL.Common.Response;
 
-using Discord;
-
-using Overseer.Exceptions;
 using Overseer.Models;
 using Overseer.Services.Logging;
 

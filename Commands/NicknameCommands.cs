@@ -16,7 +16,7 @@ namespace Overseer.Commands
     [Name("Nicknames"), RequireOwner(Group = "Permission"), RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
     public class NicknameCommands : ModuleBase<SocketCommandContext>
     {
-        private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(1);
+        private static readonly SemaphoreSlim Semaphore = new SemaphoreSlim(1);
 
         private readonly ILogger _logger;
         private readonly UserManager _us;
@@ -45,14 +45,12 @@ namespace Overseer.Commands
                     var targetAlreadyEnforced = $"{target} is already enforced.";
                     await _logger.Log(LogSeverity.Error, targetAlreadyEnforced, method, caller);
                     await ReplyAsync($"{targetAlreadyEnforced} Type `>revert @{target}` to stop nickname enforcement.");
-                    return;
                 }
                 else if (!botCanModifyUser)
                 {
                     var inadequatePermissions = $"Inadequate permissions to modify {target}.";
                     await _logger.Log(LogSeverity.Error, inadequatePermissions, method, caller);
                     await ReplyAsync($"{inadequatePermissions} Ensure bot has a higher role than the user and try again.");
-                    return;
                 }
                 else
                 {
@@ -84,9 +82,9 @@ namespace Overseer.Commands
                     return;
                 }
 
-                if (!await semaphore.WaitAsync(0)) // Ensure only 1 instance of a long running command is active at any given time
+                if (!await Semaphore.WaitAsync(0)) // Ensure only 1 instance of a long running command is active at any given time
                 {
-                    var alreadyRunning = $"Another command is still in progress. Please wait until it's finished before trying again.";
+                    var alreadyRunning = "Another command is still in progress. Please wait until it's finished before trying again.";
                     await _logger.Log(LogSeverity.Error, alreadyRunning, method, caller);
                     await ReplyAsync($"{alreadyRunning}");
                     return;
@@ -113,7 +111,7 @@ namespace Overseer.Commands
             }
             finally
             {
-                semaphore.Release(1);
+                Semaphore.Release(1);
             }
         }
 
@@ -135,7 +133,6 @@ namespace Overseer.Commands
                     var targetNotEnforced = $"{target} is not currently being enforced.";
                     await _logger.Log(LogSeverity.Error, targetNotEnforced, method, caller);
                     await ReplyAsync($"{targetNotEnforced} Type `>rename @{user.Username} [name to enforce]` to begin nickname enforcement.");
-                    return;
                 }
 
                 if (!botCanModifyUser)
@@ -143,7 +140,6 @@ namespace Overseer.Commands
                     var inadequatePermissions = $"Inadequate permissions to modify {target}.";
                     await _logger.Log(LogSeverity.Error, inadequatePermissions, method, caller);
                     await ReplyAsync($"{inadequatePermissions} Ensure bot has a higher role than the user and try again.");
-                    return;
                 }
                 else
                 {
@@ -175,16 +171,16 @@ namespace Overseer.Commands
                     return;
                 }
 
-                if (!await semaphore.WaitAsync(0)) // Ensure only 1 instance of a long running command is active at any given time
+                if (!await Semaphore.WaitAsync(0)) // Ensure only 1 instance of a long running command is active at any given time
                 {
-                    var alreadyRunning = $"Another command is still in progress. Please wait until it's finished before trying again.";
+                    var alreadyRunning = "Another command is still in progress. Please wait until it's finished before trying again.";
                     await _logger.Log(LogSeverity.Error, alreadyRunning, method, caller);
                     await ReplyAsync($"{alreadyRunning}");
                     return;
                 }
 
                 var stopwatch = new Stopwatch();
-                var msg = $"Beginning mass revert.";
+                var msg = "Beginning mass revert.";
                 await _logger.Log(LogSeverity.Info, msg, method, caller);
                 await ReplyAsync(msg);
 
@@ -204,7 +200,7 @@ namespace Overseer.Commands
             }
             finally
             {
-                semaphore.Release(1);
+                Semaphore.Release(1);
             }
         }
     }

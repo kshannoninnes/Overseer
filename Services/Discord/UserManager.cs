@@ -116,7 +116,7 @@ namespace Overseer.Services.Discord
         public async Task<IEnumerable<IGuildUser>> GetActionableUsersAsync(IGuild guild)
         {
             var opt = new RequestOptions() { RetryMode = RetryMode.AlwaysRetry };
-            var allUsers = await guild.GetUsersAsync(CacheMode.AllowDownload, options: opt) as IEnumerable<SocketGuildUser>;
+            var allUsers = await guild.GetUsersAsync(CacheMode.AllowDownload, options: opt) as IReadOnlyCollection<SocketGuildUser>;
             var bot = await guild.GetCurrentUserAsync() as SocketGuildUser;
 
             return allUsers.Where(x => !x.IsBot && x.Hierarchy < bot.Hierarchy);

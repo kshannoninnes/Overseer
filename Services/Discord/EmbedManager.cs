@@ -9,6 +9,7 @@ using Overseer.Models;
 using Overseer.Constants;
 using Overseer.Services.Logging;
 
+// TODO try to refactor CraftEmbed to not require ReleaseType param
 namespace Overseer.Services.Discord
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]
@@ -132,14 +133,6 @@ namespace Overseer.Services.Discord
             return capitalizedText;
         }
 
-        private async Task<string> FormatInlineFieldLength(string text)
-        {
-            var maxLength = 30;
-            var separator = ", ";
-
-            return await FormatLength(text, maxLength, separator);
-        }
-
         private async Task<string> FormatLength(string text, int maxLength, string separator, bool breakOnOverflow = false)
         {
             await Task.CompletedTask;
@@ -153,7 +146,7 @@ namespace Overseer.Services.Discord
                 {
                     if (breakOnOverflow)
                     {
-                        newText += $" .....";
+                        newText += " .....";
                         break;
                     }
 
@@ -169,7 +162,7 @@ namespace Overseer.Services.Discord
                 }
             }
 
-            return newText[0..^2];
+            return newText[..^2];
         }
 
         private async Task<string> FormatDescription(string description)

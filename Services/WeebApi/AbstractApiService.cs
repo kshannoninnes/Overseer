@@ -13,7 +13,7 @@ namespace Overseer.Services.WeebApi
 
         private readonly ILogger _logger;
 
-        public AbstractApiService(ILogger logger)
+        protected AbstractApiService(ILogger logger)
         {
             _logger = logger;
         }
@@ -22,8 +22,6 @@ namespace Overseer.Services.WeebApi
         {
             if (res.Errors != null)
             {
-                var message = string.Empty;
-
                 foreach (var error in res.Errors)
                 {
                     await _logger.Log(LogSeverity.Error, error.Message, nameof(ValidateApiResponse));
@@ -39,7 +37,7 @@ namespace Overseer.Services.WeebApi
 
             return "query MediaSearch($search:String, $type:MediaType) " +
                    "{ " +
-                        $"Media (search: $search, type: $type) " +
+                        "Media (search: $search, type: $type) " +
                         "{ " +
                             "title { romaji } " +
                             "format " +

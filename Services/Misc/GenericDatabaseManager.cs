@@ -9,13 +9,12 @@ namespace Overseer.Services.Misc
 {
     public class GenericDatabaseManager : IDatabaseManager
     {
-        private readonly string _dbPath;
         private readonly SQLiteAsyncConnection _conn;
 
         public GenericDatabaseManager(string filename)
         {
-            _dbPath = Path.Combine(Environment.CurrentDirectory, filename);
-            _conn = new SQLiteAsyncConnection(_dbPath);
+            var dbPath = Path.Combine(Environment.CurrentDirectory, filename);
+            _conn = new SQLiteAsyncConnection(dbPath);
         }
 
         public async Task CreateTable<T>() where T : new()
@@ -41,7 +40,6 @@ namespace Overseer.Services.Misc
 
         public async Task RemoveAsync<T>(T value) where T : new()
         {
-            var conn = new SQLiteAsyncConnection(_dbPath);
             await _conn.DeleteAsync(value);
         }
 

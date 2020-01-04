@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 namespace Overseer.Models
 {
-    // TODO Break this into 2 models, one for each type of media
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read only", Justification = "Required for deserialization")]
     public class OverseerMedia
     {
@@ -16,9 +15,9 @@ namespace Overseer.Models
         public string Format { get; set; }
         public int NumReleases { get; set; }
         [JsonProperty("chapters")]
-        private int Chapters { set { NumReleases = value; } }
+        private int Chapters { set => NumReleases = value; }
         [JsonProperty("episodes")]
-        private int Episodes { set { NumReleases = value; } }
+        private int Episodes { set => NumReleases = value; }
         public List<string> Genres { get; set; }
         public List<Tag> Tags { get; set; }
     }
