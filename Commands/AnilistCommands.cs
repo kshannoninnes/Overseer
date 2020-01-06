@@ -19,7 +19,7 @@ namespace Overseer.Commands
         private readonly IMediaFetcher _mangaFetcher;
         private readonly IMediaFetcher _animeFetcher;
 
-        public AnilistCommands(ILogger logger, EmbedManager es, IMediaFetcher mf, IMediaFetcher af)
+        public AnilistCommands(ILogger logger, EmbedManager es, MangaFetcher mf, AnimeFetcher af)
         {
             _logger = logger;
             _embedService = es;

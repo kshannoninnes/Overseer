@@ -59,8 +59,8 @@ namespace Overseer
                 .AddScoped<ILogger, LoggingService>()
                 .AddScoped<UserManager>()
                 .AddScoped<EmbedManager>()
-                .AddScoped<IMediaFetcher, AnimeFetcher>()
-                .AddScoped<IMediaFetcher, MangaFetcher>()
+                .AddScoped<AnimeFetcher>()
+                .AddScoped<MangaFetcher>()
                 .AddScoped<AbstractApiService, AnilistApiService>();
 
             return map.BuildServiceProvider();
