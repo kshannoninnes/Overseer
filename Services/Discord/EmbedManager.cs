@@ -8,6 +8,7 @@ using Discord;
 using Overseer.Models;
 using Overseer.Constants;
 using Overseer.Services.Logging;
+using System;
 
 // TODO try to refactor CraftEmbed to not require ReleaseType param
 namespace Overseer.Services.Discord
@@ -22,39 +23,33 @@ namespace Overseer.Services.Discord
             _logger = logger;
         }
 
-        public async Task<Embed> CraftEmbed(OverseerMedia media, ReleaseType type)
+        public async Task<Embed> CraftEmbed(OverseerMedia media)
         {
             // attributes
             var title = $"**{media.Title.Romaji}**";
-            var url = media.SiteUrl;
             var desc = await FormatDescription(media.Description);
+            var url = media.SiteUrl.ToString();
             var color = EmbedConstants.Color;
             var thumbnail = media.CoverImage.ExtraLarge;
-
-            // fields
-            var status = await GetStatus(media.Status);
-            var format = await GetFormat(media.Format);
-            var releaseTypeName = await GetType(type);
-            var releaseNum = await GetNumberOfReleases(media.NumReleases);
-            var genres = await GetGenres(media.Genres);
-            var tags = await GetTags(media.Tags);
+            var footer = new EmbedFooterBuilder
+            {
+                Text = await FormatFooterStatus(media)
+            };
 
             var eb = new EmbedBuilder
             {
                 Title = title,
-                Url = url.ToString(),
                 Description = desc,
+                Url = url,
                 Color = color,
-                ThumbnailUrl = thumbnail
+                ThumbnailUrl = thumbnail,
+                Footer = footer
             };
 
-            // TODO refactor for consistency: get an embed field builder from all the above "GetX" methods, then add them using the AddField(EFB) method
-            await AddField(eb, "Status", status, true);
-            await AddField(eb, "Type", format, true);
-            await AddField(eb, releaseTypeName, releaseNum, true);
-            await AddField(eb, "Genres", genres, true);
-            await AddField(eb, "Tags", tags, true);
-            await AddEmptyField(eb, true);
+            // fields
+            var tags = await GetTagList(media.Tags);
+            var genresAndTags = string.Join(", ", tags.Concat(media.Genres));
+            await AddField(eb, "Tags", genresAndTags, false);
 
             return eb.Build();
         }
@@ -107,22 +102,10 @@ namespace Overseer.Services.Discord
             return type == ReleaseType.Manga ? "Chapters" : "Episodes";
         }
 
-        private async Task<string> GetNumberOfReleases(int numReleases)
+        private async Task<IEnumerable<string>> GetTagList(List<Tag> tagList)
         {
             await Task.CompletedTask;
-            return numReleases == 0 ? "TBD" : numReleases.ToString(); // If episodes or chapters == 0, then it's still being released
-        }
-
-        private async Task<string> GetGenres(List<string> genreList)
-        {
-            await Task.CompletedTask;
-            return string.Join(", ", genreList);
-        }
-
-        private async Task<string> GetTags(List<Tag> tagList)
-        {
-            await Task.CompletedTask;
-            return string.Join(", ", tagList.Where(t => !t.IsMediaSpoiler && t.Rank > 50).Select(t => t.Name));
+            return tagList.Where(x => !x.IsMediaSpoiler && x.Rank >= 50).Select(x => x.Name);
         }
 
         private async Task<string> CapitalizeFirstLetter(string text)
@@ -177,6 +160,28 @@ namespace Overseer.Services.Discord
             var newDesc = await FormatLength(description, maxLength, separator, breakOnOverflow: true);
 
             return newDesc;
+        }
+
+        private async Task<string> FormatFooterStatus(OverseerMedia media)
+        {
+            string res;
+
+            if (media.NextAiringEpisode == null)
+            {
+                res = await CapitalizeFirstLetter(media.Status);
+            }
+            else
+            {
+                var duration = TimeSpan.FromSeconds(media.NextAiringEpisode.TimeUntilAiring);
+
+                // Xd Yh Zm if days remaining, else Yh Zm if hours remaining, else Zm
+                res = "Next Episode: ";
+                res += (duration.TotalHours > 23) ? $"{duration.Days}d {duration.Hours}h {duration.Minutes}m"
+                    : (duration.TotalMinutes > 59) ? $"{duration.Hours}h {duration.Minutes}m"
+                    : $"{duration.Minutes}m";
+            }
+
+            return res;
         }
     }
 }

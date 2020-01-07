@@ -8,16 +8,12 @@ namespace Overseer.Models
     public class OverseerMedia
     {
         public Title Title { get; set; }
-        public Uri SiteUrl { get; set; }
         public string Description { get; set; }
+        public string Format { get; set; }
+        public NextEpisode NextAiringEpisode { get; set; }
+        public Uri SiteUrl { get; set; }
         public CoverImage CoverImage { get; set; }
         public string Status { get; set; }
-        public string Format { get; set; }
-        public int NumReleases { get; set; }
-        [JsonProperty("chapters")]
-        private int Chapters { set => NumReleases = value; }
-        [JsonProperty("episodes")]
-        private int Episodes { set => NumReleases = value; }
         public List<string> Genres { get; set; }
         public List<Tag> Tags { get; set; }
     }
@@ -37,5 +33,10 @@ namespace Overseer.Models
         public string Name { get; set; }
         public int Rank { get; set; }
         public bool IsMediaSpoiler { get; set; }
+    }
+
+    public class NextEpisode
+    {
+        public int TimeUntilAiring { get; set; }
     }
 }
