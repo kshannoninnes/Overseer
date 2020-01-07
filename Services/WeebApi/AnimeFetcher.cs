@@ -8,9 +8,9 @@ namespace Overseer.Services.WeebApi
     {
         private const string SearchType = "ANIME";
 
-        private readonly AbstractApiService _fetcher;
+        private readonly IApiService _fetcher;
 
-        public AnimeFetcher(AbstractApiService fetcher)
+        public AnimeFetcher(IApiService fetcher)
         {
             _fetcher = fetcher;
         }
