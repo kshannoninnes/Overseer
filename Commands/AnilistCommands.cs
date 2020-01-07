@@ -28,12 +28,12 @@ namespace Overseer.Commands
         }
 
         [Name("Manga"), Command("manga"), Summary("Find manga by name.\n\n**Usage**: >manga [title]")]
-        public async Task GetMangaAsync([Summary("Manga title to search for")] [Remainder] string mangaTitle) => await GetMediaAsync(mangaTitle, ReleaseType.Manga, _mangaFetcher);
+        public async Task GetMangaAsync([Summary("Manga title to search for")] [Remainder] string mangaTitle) => await GetMediaAsync(mangaTitle, _mangaFetcher);
 
         [Name("Anime"), Command("anime"), Summary("Find anime by name.\n\n**Usage**: >anime [title]")]
-        public async Task GetAnimeAsync([Summary("Anime title to search for")] [Remainder] string animeTitle) => await GetMediaAsync(animeTitle, ReleaseType.Anime, _animeFetcher);
+        public async Task GetAnimeAsync([Summary("Anime title to search for")] [Remainder] string animeTitle) => await GetMediaAsync(animeTitle, _animeFetcher);
 
-        private async Task GetMediaAsync(string title, ReleaseType type, IMediaFetcher fetcher)
+        private async Task GetMediaAsync(string title, IMediaFetcher fetcher)
         {
             var caller = Context.User.Username;
             var methodName = nameof(GetMediaAsync);
@@ -41,9 +41,9 @@ namespace Overseer.Commands
             try
             {
                 var media = await fetcher.GetAsync(title);
-                var embed = await _embedService.CraftEmbed(media, type);
+                var embed = await _embedService.CraftEmbed(media);
 
-                await _logger.Log(LogSeverity.Info, $"{title} matched to {media.Title.Romaji}.", methodName, caller);
+                await _logger.Log(LogSeverity.Info, $"{title} matched to {media.Title.Romaji}", methodName, caller);
                 await ReplyAsync(embed: embed);
             }
             catch (UpstreamApiException e)
