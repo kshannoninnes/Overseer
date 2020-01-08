@@ -20,42 +20,37 @@ namespace Overseer
     {
         static void Main() => new Overseer().MainAsync().GetAwaiter().GetResult();
 
-        private DiscordSocketClient _client;
-        private CommandService _commands;
-        private CommandHandler _handler;
-        private IServiceProvider _services;
-
-        private static string EnvToken =>
-            #if DEBUG
-                Environment.GetEnvironmentVariable("TestToken");
-            #else
-                Environment.GetEnvironmentVariable("OverseerToken");
-            #endif
-
         // Discord.NET framework is all asynchronous, so it requires an async main method
         private async Task MainAsync()
         {
-            _client = new DiscordSocketClient(new DiscordSocketConfig { AlwaysDownloadUsers = true });
-            _commands = new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false });
-            _services = await ConfigureServices();
-            _handler = new CommandHandler(_services, _commands, _client);
+            var client = new DiscordSocketClient(new DiscordSocketConfig { AlwaysDownloadUsers = true });
+            var commands = new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false });
+            var services = await ConfigureServices(client, commands);
+            var handler = new CommandHandler(services, commands, client);
 
-            await _handler.InitializeAsync();
-            await _client.SetGameAsync("for .help", type: ActivityType.Watching);
-            await _client.LoginAsync(TokenType.Bot, EnvToken);
-            await _client.StartAsync();
+            string EnvToken;
+            #if DEBUG
+                EnvToken = Environment.GetEnvironmentVariable("TestToken");
+            #else
+                EnvToken = Environment.GetEnvironmentVariable("OverseerToken");
+            #endif
+
+            await handler.InitializeAsync();
+            await client.SetGameAsync("for .help", type: ActivityType.Watching);
+            await client.LoginAsync(TokenType.Bot, EnvToken);
+            await client.StartAsync();
             await Task.Delay(Timeout.Infinite);
         }
 
-        private async Task<IServiceProvider> ConfigureServices()
+        private async Task<IServiceProvider> ConfigureServices(DiscordSocketClient client, CommandService commands)
         {
             var db = new GenericDatabaseManager("overseer.db");
             await db.CreateTable<EnforcedUser>();
 
             var map = new ServiceCollection()
                 .AddSingleton<IDatabaseManager>(db)
-                .AddSingleton(_client)
-                .AddSingleton(_commands)
+                .AddSingleton(client)
+                .AddSingleton(commands)
                 .AddScoped<ILogger, LoggingService>()
                 .AddScoped<UserManager>()
                 .AddScoped<EmbedManager>()
