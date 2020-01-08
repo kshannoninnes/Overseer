@@ -19,6 +19,12 @@
     <PackageReference Include="ILMerge" Version="3.0.29" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="StringUtils">
+      <HintPath>..\StringUtils\bin\Release\netcoreapp3.1\StringUtils.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <Target Name="ILMerge">
     <!-- the ILMergePath property points to the location of ILMerge.exe console application -->
     <Exec Command="$(ILMergeConsolePath) /out:Merged.dll File1.dll File2.dll" />
