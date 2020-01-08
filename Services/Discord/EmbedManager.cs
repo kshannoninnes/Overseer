@@ -1,14 +1,16 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+
+using StringUtils;
 
 using Discord;
 
 using Overseer.Models;
 using Overseer.Constants;
 using Overseer.Services.Logging;
-using System;
 
 // TODO try to refactor CraftEmbed to not require ReleaseType param
 namespace Overseer.Services.Discord
@@ -26,7 +28,7 @@ namespace Overseer.Services.Discord
         public async Task<Embed> CraftEmbed(OverseerMedia media)
         {
             // attributes
-            var title = $"**{media.Title.Romaji}**";
+            var title = await FormatTitle(media.Title.Romaji);
             var desc = await FormatDescription(media.Description);
             var url = media.SiteUrl.ToString();
             var color = EmbedConstants.Color;
@@ -49,139 +51,63 @@ namespace Overseer.Services.Discord
             // fields
             var tags = await GetTagList(media.Tags);
             var genresAndTags = string.Join(", ", tags.Concat(media.Genres));
-            await AddField(eb, "Tags", genresAndTags, false);
+            eb.AddField("Tags", genresAndTags, true);
 
             return eb.Build();
         }
 
-        private async Task AddField(EmbedBuilder eb, string name, string value, bool inline)
+        private Task<string> FormatTitle(string title)
         {
-            await Task.CompletedTask;
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                value = string.IsNullOrWhiteSpace(value) ? "N/A" : value;
-                eb.AddField(name, value, inline);
-            }
+            return Task.FromResult($"**{title}**");
         }
 
-        private async Task AddEmptyField(EmbedBuilder eb, bool inline)
+        private Task<string> FormatDescription(string description)
         {
-            await AddField(eb, "\u200b", "\u200b", inline);
-        }
-
-        private async Task<string> RemoveBlacklistedSubstrings(string text)
-        {
-            await Task.CompletedTask;
-            List<string> blacklistedSubstrings = new List<string> {
-                "<.*?>",
-                "\\(Source.*?\\)"
-            };
-
-            foreach (var entry in blacklistedSubstrings)
-            {
-                text = Regex.Replace(text, entry, string.Empty);
-            }
-
-            return text;
-        }
-
-        private async Task<string> GetStatus(string status)
-        {
-            status = status.Replace("_", " ");
-            return await CapitalizeFirstLetter(status);
-        }
-
-        private async Task<string> GetFormat(string type)
-        {
-            return await CapitalizeFirstLetter(type);
-        }
-
-        private async Task<string> GetType(ReleaseType type)
-        {
-            await Task.CompletedTask;
-            return type == ReleaseType.Manga ? "Chapters" : "Episodes";
-        }
-
-        private async Task<IEnumerable<string>> GetTagList(List<Tag> tagList)
-        {
-            await Task.CompletedTask;
-            return tagList.Where(x => !x.IsMediaSpoiler && x.Rank >= 50).Select(x => x.Name);
-        }
-
-        private async Task<string> CapitalizeFirstLetter(string text)
-        {
-            await Task.CompletedTask;
-            string capitalizedText = text.Length < 3 ? text.ToUpper() : char.ToUpper(text[0]) + text.Substring(1).ToLower();
-
-            return capitalizedText;
-        }
-
-        private async Task<string> FormatLength(string text, int maxLength, string separator, bool breakOnOverflow = false)
-        {
-            await Task.CompletedTask;
-            var parts = text.Split(separator);
-            var newText = string.Empty;
-            var length = 0;
-
-            foreach (var part in parts)
-            {
-                if (length + part.Length > maxLength)
-                {
-                    if (breakOnOverflow)
-                    {
-                        newText += " .....";
-                        break;
-                    }
-
-                    var addedText = $"\n{part}{separator}";
-                    newText += addedText;
-                    length = addedText.Length;
-                }
-                else
-                {
-                    var addedText = $"{part}{separator}";
-                    newText += addedText;
-                    length += addedText.Length;
-                }
-            }
-
-            return newText[..^2];
-        }
-
-        private async Task<string> FormatDescription(string description)
-        {
-            await Task.CompletedTask;
-            description = description.Trim().Replace("<br>", "");
-            description = Regex.Replace(description, "\n+", " ");
-            description = await RemoveBlacklistedSubstrings(description);
-
+            var origLength = description.Length;
             var maxLength = 185;
             var separator = " ";
-            var newDesc = await FormatLength(description, maxLength, separator, breakOnOverflow: true);
+            var blacklist = new List<string>
+            {
+                "<.*?>",
+                "\\(Source.*?\\)",
+                "<br>",
+                "\n+"
+            };
 
-            return newDesc;
+            description = description
+                .Trim()
+                .RemoveSubstrings(blacklist)
+                .Join(separator, maxLength);
+            if (description.Length < origLength) description += "...";
+
+            return Task.FromResult(description);
         }
 
-        private async Task<string> FormatFooterStatus(OverseerMedia media)
+        private Task<string> FormatFooterStatus(OverseerMedia media)
         {
             string res;
 
             if (media.NextAiringEpisode == null)
             {
-                res = await CapitalizeFirstLetter(media.Status);
+                res = media.Status.ToTitleCase();
             }
             else
             {
                 var duration = TimeSpan.FromSeconds(media.NextAiringEpisode.TimeUntilAiring);
 
-                // Xd Yh Zm if days remaining, else Yh Zm if hours remaining, else Zm
                 res = "Next Episode: ";
-                res += (duration.TotalHours > 23) ? $"{duration.Days}d {duration.Hours}h {duration.Minutes}m"
-                    : (duration.TotalMinutes > 59) ? $"{duration.Hours}h {duration.Minutes}m"
-                    : $"{duration.Minutes}m";
+                res += (duration.TotalHours > 23) ? $"{duration.Days}d {duration.Hours}h {duration.Minutes}m"   // dd hh mm if > 23h
+                    : (duration.TotalMinutes > 59) ? $"{duration.Hours}h {duration.Minutes}m"                   // hh mm if > 59m
+                    : $"{duration.Minutes}m";                                                                   // mm default
             }
 
-            return res;
+            return Task.FromResult(res);
+        }
+
+        private Task<IEnumerable<string>> GetTagList(List<Tag> tagList)
+        {
+            var tagNameList = tagList.Where(x => !x.IsMediaSpoiler && x.Rank >= 50).Select(x => x.Name);
+            return Task.FromResult(tagNameList);
         }
     }
 }
