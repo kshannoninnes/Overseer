@@ -12,7 +12,6 @@ using Overseer.Models;
 using Overseer.Constants;
 using Overseer.Services.Logging;
 
-// TODO try to refactor CraftEmbed to not require ReleaseType param
 namespace Overseer.Services.Discord
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1822:Mark members as static", Justification = "Logically operates on an instance")]

@@ -18,10 +18,7 @@ namespace Overseer
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Main class runs forever")]
     class Overseer
     {
-        static void Main() => new Overseer().MainAsync().GetAwaiter().GetResult();
-
-        // Discord.NET framework is all asynchronous, so it requires an async main method
-        private async Task MainAsync()
+        static async Task Main()
         {
             var client = new DiscordSocketClient(new DiscordSocketConfig { AlwaysDownloadUsers = true });
             var commands = new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false });
@@ -42,7 +39,7 @@ namespace Overseer
             await Task.Delay(Timeout.Infinite);
         }
 
-        private async Task<IServiceProvider> ConfigureServices(DiscordSocketClient client, CommandService commands)
+        private static async Task<IServiceProvider> ConfigureServices(DiscordSocketClient client, CommandService commands)
         {
             var db = new GenericDatabaseManager("overseer.db");
             await db.CreateTable<EnforcedUser>();
