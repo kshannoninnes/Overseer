@@ -15,7 +15,6 @@ using Overseer.Services.Discord;
 
 namespace Overseer
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Main class runs forever")]
     class Overseer
     {
         static async Task Main()

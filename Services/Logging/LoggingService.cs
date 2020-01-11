@@ -36,14 +36,34 @@ namespace Overseer.Services.Logging
             }
         }
 
-        private Task Log(LogMessage logMessage)
+        private async Task Log(LogMessage logMessage)
+        {
+            if(logMessage.Exception != null)
+            {
+                await LogToFile(logMessage);
+                var newLogMsg = new LogMessage(logMessage.Severity, logMessage.Source, $"Exception: {logMessage.Exception.Message}");
+                await LogToConsole(newLogMsg);
+            }
+            else
+            {
+                await LogToFile(logMessage);
+                await LogToConsole(logMessage);
+            }
+        }
+
+        private static Task LogToFile(LogMessage logMessage)
         {
             var filename = $"{LogDirectory}/{DateTime.Now.ToString(DateFormat)}.log";
             var text = logMessage.ToString(padSource: SourcePadLength);
             using var writer = File.AppendText(filename);
-
             writer.WriteLine(text);
-            Console.WriteLine(text);
+
+            return Task.CompletedTask;
+        }
+
+        private static Task LogToConsole(LogMessage logMessage)
+        {
+            Console.WriteLine(logMessage);
 
             return Task.CompletedTask;
         }
