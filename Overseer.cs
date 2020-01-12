@@ -26,14 +26,14 @@ namespace Overseer
 
             string EnvToken;
             #if DEBUG
-                EnvToken = Environment.GetEnvironmentVariable("TestToken");
+                EnvToken = "TestToken";
             #else
-                EnvToken = Environment.GetEnvironmentVariable("OverseerToken");
+                EnvToken = "OverseerToken";
             #endif
 
             await handler.InitializeAsync();
             await client.SetGameAsync("for .help", type: ActivityType.Watching);
-            await client.LoginAsync(TokenType.Bot, EnvToken);
+            await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable(EnvToken));
             await client.StartAsync();
             await Task.Delay(Timeout.Infinite);
         }
