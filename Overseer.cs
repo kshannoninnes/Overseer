@@ -40,13 +40,14 @@ namespace Overseer
 
         private static async Task<IServiceProvider> ConfigureServices(DiscordSocketClient client, CommandService commands)
         {
-            var db = new GenericDatabaseManager("overseer.db");
-            await db.CreateTable<EnforcedUser>();
+            //var db = new GenericDatabaseManager("overseer.db");
+            //await db.CreateTable<EnforcedUser>();
 
             var map = new ServiceCollection()
-                .AddSingleton<IDatabaseManager>(db)
+                //.AddSingleton<IDatabaseManager>(db)
                 .AddSingleton(client)
                 .AddSingleton(commands)
+                .AddScoped<EnforcedUserContext>()
                 .AddScoped<ILogger, LoggingService>()
                 .AddScoped<UserManager>()
                 .AddScoped<EmbedManager>()
