@@ -27,10 +27,10 @@ namespace Overseer.Commands
             _animeFetcher = af;
         }
 
-        [Name("Manga"), Command("manga"), Summary("Find manga by name.\n\n**Usage**: >manga [title]")]
+        [Name("Manga"), Command("manga"), Summary("Find manga by name.\n\n**Usage**: .manga [title]")]
         public async Task GetMangaAsync([Summary("Manga title to search for")] [Remainder] string mangaTitle) => await GetMediaAsync(mangaTitle, _mangaFetcher);
 
-        [Name("Anime"), Command("anime"), Summary("Find anime by name.\n\n**Usage**: >anime [title]")]
+        [Name("Anime"), Command("anime"), Summary("Find anime by name.\n\n**Usage**: .anime [title]")]
         public async Task GetAnimeAsync([Summary("Anime title to search for")] [Remainder] string animeTitle) => await GetMediaAsync(animeTitle, _animeFetcher);
 
         private async Task GetMediaAsync(string title, IMediaFetcher fetcher)

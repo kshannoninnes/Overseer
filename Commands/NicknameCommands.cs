@@ -27,7 +27,7 @@ namespace Overseer.Commands
             _us = us;
         }
 
-        [Name("Rename"), Command("rename"), Summary("Enforce a non-admin user's nickname.\n\n**Usage**: >rename [all | @user] [name]")]
+        [Name("Rename"), Command("rename"), Summary("Enforce a non-admin user's nickname.\n\n**Usage**: .rename [all | @user] [name]")]
         public async Task RenameAsync([Summary("the user to be renamed")] SocketGuildUser user, [Remainder][Summary("The name to set on the user")] string name)
         {
             var bot = Context.Guild.CurrentUser;
@@ -115,7 +115,7 @@ namespace Overseer.Commands
             }
         }
 
-        [Name("Revert"), Command("revert"), Summary("Stop enforcing a non-admin user's nickname.\n\n**Usage**: >revert [all | @user]")]
+        [Name("Revert"), Command("revert"), Summary("Stop enforcing a non-admin user's nickname.\n\n**Usage**: .revert [all | @user]")]
         public async Task RevertAsync([Summary("the user to be reverted")] SocketGuildUser user)
         {
             var bot = Context.Guild.CurrentUser;

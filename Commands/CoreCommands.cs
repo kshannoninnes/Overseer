@@ -22,7 +22,7 @@ namespace Overseer.Commands
         }
 
         [Command("help")]
-        [Summary("View a list of useful information for Overseer.\n\n**Usage**: >help [command]")]
+        [Summary("View a list of useful information for Overseer.\n\n**Usage**: .help [command]")]
         public async Task HelpAsync()
         {
             var caller = Context.User.Username;
