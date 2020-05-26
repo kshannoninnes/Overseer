@@ -8,7 +8,6 @@ using Discord;
 using Discord.WebSocket;
 
 using Overseer.Models;
-using Overseer.Services.Misc;
 using Overseer.Services.Logging;
 
 namespace Overseer.Services.Discord
@@ -17,10 +16,10 @@ namespace Overseer.Services.Discord
     public class UserManager
     {
         private readonly DiscordSocketClient _client;
-        private readonly IDatabaseManager _db;
+        private readonly EnforcedUserContext _db;
         private readonly ILogger _logger;
 
-        public UserManager(DiscordSocketClient client, IDatabaseManager db, ILogger logger)
+        public UserManager(DiscordSocketClient client, EnforcedUserContext db, ILogger logger)
         {
             _client = client;
             _db = db;
@@ -35,49 +34,45 @@ namespace Overseer.Services.Discord
         /// <returns></returns>
         public async Task<bool> IsForcedAsync(ulong id)
         {
-            var pred = await GetIdPredicate(id);
-            var isEnforced = await _db.Exists(pred);
+            var isEnforced = await UserExistsAsync(id);
 
             return isEnforced;
         }
 
         public async Task RenameUserAsync(IGuildUser user, string enforcedName)
         {
-            var enforcedUser = new EnforcedUser
+            var enforcedUser = new EnforcedUsers
             {
                 Id = user.Id.ToString(),
                 Nickname = user.Nickname ?? string.Empty,
                 EnforcedNickname = enforcedName
             };
 
-            await _db.InsertAsync(enforcedUser);
+            await AddUserAsync(enforcedUser);
             await user.ModifyAsync(x => x.Nickname = enforcedName);
         }
 
         public async Task RevertUserAsync(IGuildUser user)
         {
-            var pred = await GetIdPredicate(user.Id);
-            var enforcedUser = await _db.GetAsync(pred);
-            await _db.RemoveAsync(enforcedUser);
-            await user.ModifyAsync(x => x.Nickname = enforcedUser.Nickname);
+            var removedUser = await RemoveUserAsync(user.Id);
+            await user.ModifyAsync(x => x.Nickname = removedUser.Nickname);
         }
 
+        // TODO Remove code duplication from these 2 methods
         public async Task<int> RenameAllUsersAsync(IEnumerable<IGuildUser> users, string enforcedName)
         {
             var numUsersRenamed = 0;
             foreach (var user in users)
             {
-                var pred = await GetIdPredicate(user.Id);
-                var isEnforced = await _db.Exists(pred);
+                var isEnforced = await UserExistsAsync(user.Id);
 
                 var bot = await user.Guild.GetCurrentUserAsync();
                 var canModify = await CanModify(bot as SocketGuildUser, user as SocketGuildUser);
 
-                if (!isEnforced && canModify)
-                {
-                    await RenameUserAsync(user, enforcedName);
-                    numUsersRenamed++;
-                }
+                if (isEnforced || !canModify) continue;
+                
+                await RenameUserAsync(user, enforcedName);
+                numUsersRenamed++;
             }
 
             return numUsersRenamed;
@@ -85,21 +80,18 @@ namespace Overseer.Services.Discord
 
         public async Task<int> RevertAllUsersAsync(IEnumerable<IGuildUser> users)
         {
-
             var numUsersReverted = 0;
             foreach (var user in users)
             {
-                var pred = await GetIdPredicate(user.Id);
-                var isEnforced = await _db.Exists(pred);
+                var isEnforced = await UserExistsAsync(user.Id);
 
                 var bot = await user.Guild.GetCurrentUserAsync();
                 var canModify = await CanModify(bot as SocketGuildUser, user as SocketGuildUser);
 
-                if (isEnforced && canModify)
-                {
-                    await RevertUserAsync(user);
-                    numUsersReverted++;
-                }
+                if (!isEnforced || !canModify) continue;
+                
+                await RevertUserAsync(user);
+                numUsersReverted++;
             }
 
             return numUsersReverted;
@@ -130,26 +122,12 @@ namespace Overseer.Services.Discord
         /// <returns>
         ///     True if the bot can modify the user, false otherwise.
         /// </returns>
-        public async Task<bool> CanModify(SocketGuildUser bot, SocketGuildUser user)
+        public Task<bool> CanModify(SocketGuildUser bot, SocketGuildUser user)
         {
-            await Task.CompletedTask;
             var botAboveUser = bot.Hierarchy > user.Hierarchy;
             var botHasPerms = bot.GuildPermissions.ManageNicknames;
 
-            return botHasPerms && botAboveUser;
-        }
-
-        /// <summary>
-        ///     Start enforcement of user nicknames
-        /// </summary>
-        /// <returns>
-        ///     A task representing the asynchronous start operation
-        /// </returns>
-        public Task StartMaintainingAsync()
-        {
-            _client.GuildMemberUpdated += MaintainAllNicknames;
-            _client.UserJoined += SetNicknameOnNewUser;
-            return Task.CompletedTask;
+            return Task.FromResult(botHasPerms && botAboveUser);
         }
 
         /// <summary>
@@ -162,12 +140,11 @@ namespace Overseer.Services.Discord
         /// <returns>
         ///     A task representing the asynchronous set operation.
         /// </returns>
-        private async Task MaintainAllNicknames(SocketGuildUser before, SocketGuildUser after)
+        private async Task MaintainNicknames(SocketGuildUser before, SocketGuildUser after)
         {
             if (await IsForcedAsync(after.Id))
             {
-                var pred = await GetIdPredicate(after.Id);
-                var enforcedNickname = (await _db.GetAsync(pred)).EnforcedNickname;
+                var enforcedNickname = (await GetUserAsync(after.Id)).EnforcedNickname;
                 var hasEnforcedName = enforcedNickname != null;
 
                 var bot = after.Guild.CurrentUser;
@@ -178,7 +155,7 @@ namespace Overseer.Services.Discord
                 if (hasEnforcedName && canModify && wrongNickname)
                 {
                     await after.ModifyAsync(x => x.Nickname = enforcedNickname);
-                    await _logger.Log(LogSeverity.Info, $"{after.Username}'s nickname changed to {enforcedNickname}", nameof(MaintainAllNicknames));
+                    await _logger.Log(LogSeverity.Info, $"Undoing {after.Username}'s nickname change from {after.Nickname}", nameof(MaintainNicknames));
                 }
             }
         }
@@ -196,19 +173,47 @@ namespace Overseer.Services.Discord
         {
             if (await IsForcedAsync(user.Id))
             {
-                var id = await GetIdPredicate(user.Id);
-                var enforcedNickname = (await _db.GetAsync(id)).EnforcedNickname;
+                var enforcedNickname = (await GetUserAsync(user.Id)).EnforcedNickname;
                 await user.ModifyAsync(x => x.Nickname = enforcedNickname);
                 await _logger.Log(LogSeverity.Info, $"{user.Username}'s nickname set to {enforcedNickname}", nameof(SetNicknameOnNewUser));
             }
         }
 
-        private async Task<Expression<Func<EnforcedUser, bool>>> GetIdPredicate(ulong id)
+        /// <summary>
+        ///     Start enforcement of user nicknames
+        /// </summary>
+        /// <returns>
+        ///     A task representing the asynchronous start operation
+        /// </returns>
+        private Task StartMaintainingAsync()
         {
-            await Task.CompletedTask;
-            var idStr = id.ToString();
+            _client.GuildMemberUpdated += MaintainNicknames;
+            _client.UserJoined += SetNicknameOnNewUser;
+            return Task.CompletedTask;
+        }
 
-            return (x) => x.Id.Equals(idStr);
+        private async Task AddUserAsync(EnforcedUsers user)
+        {
+            await _db.AddAsync(user);
+            await _db.SaveChangesAsync();
+        }
+
+        private async Task<EnforcedUsers> RemoveUserAsync(ulong id)
+        {
+            var user = await _db.FindAsync<EnforcedUsers>(id.ToString());
+            _db.Remove(user);
+            await _db.SaveChangesAsync();
+            return user;
+        }
+
+        private Task<bool> UserExistsAsync(ulong id)
+        {
+            return Task.FromResult(_db.EnforcedUsers.Select(x => x.Id.Equals(id.ToString())).Any());
+        }
+
+        private Task<EnforcedUsers> GetUserAsync(ulong id)
+        {
+            return Task.FromResult(_db.Find<EnforcedUsers>(id.ToString()));
         }
     }
 }

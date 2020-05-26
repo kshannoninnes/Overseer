@@ -15,13 +15,9 @@ using Overseer.Services.Discord;
 
 namespace Overseer
 {
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Main class runs forever")]
     class Overseer
     {
-        static void Main() => new Overseer().MainAsync().GetAwaiter().GetResult();
-
-        // Discord.NET framework is all asynchronous, so it requires an async main method
-        private async Task MainAsync()
+        static async Task Main()
         {
             var client = new DiscordSocketClient(new DiscordSocketConfig { AlwaysDownloadUsers = true });
             var commands = new CommandService(new CommandServiceConfig { CaseSensitiveCommands = false });
@@ -30,27 +26,28 @@ namespace Overseer
 
             string EnvToken;
             #if DEBUG
-                EnvToken = Environment.GetEnvironmentVariable("TestToken");
+                EnvToken = "TestToken";
             #else
-                EnvToken = Environment.GetEnvironmentVariable("OverseerToken");
+                EnvToken = "OverseerToken";
             #endif
 
             await handler.InitializeAsync();
             await client.SetGameAsync("for .help", type: ActivityType.Watching);
-            await client.LoginAsync(TokenType.Bot, EnvToken);
+            await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable(EnvToken));
             await client.StartAsync();
             await Task.Delay(Timeout.Infinite);
         }
 
-        private async Task<IServiceProvider> ConfigureServices(DiscordSocketClient client, CommandService commands)
+        private static async Task<IServiceProvider> ConfigureServices(DiscordSocketClient client, CommandService commands)
         {
-            var db = new GenericDatabaseManager("overseer.db");
-            await db.CreateTable<EnforcedUser>();
+            //var db = new GenericDatabaseManager("overseer.db");
+            //await db.CreateTable<EnforcedUser>();
 
             var map = new ServiceCollection()
-                .AddSingleton<IDatabaseManager>(db)
+                //.AddSingleton<IDatabaseManager>(db)
                 .AddSingleton(client)
                 .AddSingleton(commands)
+                .AddDbContext<EnforcedUserContext>(ServiceLifetime.Transient)
                 .AddScoped<ILogger, LoggingService>()
                 .AddScoped<UserManager>()
                 .AddScoped<EmbedManager>()
