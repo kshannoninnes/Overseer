@@ -10,13 +10,13 @@ namespace Overseer.Models
             Database.EnsureCreated();
         }
 
-        public DbSet<EnforcedUser> EnforcedUsers { get; set; }
+        public DbSet<EnforcedUsers> EnforcedUsers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
             => options.UseSqlite("Data Source=overseer.db");
     }
 
-    public class EnforcedUser
+    public class EnforcedUsers
     {
         [Key]
         public string Id { get; set; }

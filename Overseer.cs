@@ -47,7 +47,7 @@ namespace Overseer
                 //.AddSingleton<IDatabaseManager>(db)
                 .AddSingleton(client)
                 .AddSingleton(commands)
-                .AddScoped<EnforcedUserContext>()
+                .AddDbContext<EnforcedUserContext>(ServiceLifetime.Transient)
                 .AddScoped<ILogger, LoggingService>()
                 .AddScoped<UserManager>()
                 .AddScoped<EmbedManager>()
